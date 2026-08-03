@@ -1,6 +1,6 @@
 name: Deploy ChemLOS to Hostinger
 
-on:
+"on":
   push:
     branches: [main]
   workflow_dispatch:
