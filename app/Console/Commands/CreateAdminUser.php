@@ -42,6 +42,7 @@ class CreateAdminUser extends Command
         $user = User::firstOrNew(['email' => $email]);
         $user->name = $name;
         $user->nama_lengkap = $name;
+        $user->npm_nip = '0000000000';
         $user->password = $password;
         $user->status = 'approved';
         $user->email_verified_at = now();
