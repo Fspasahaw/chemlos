@@ -1,0 +1,212 @@
+name: Deploy ChemLOS to Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo, pdo_mysql, gd, zip, intl, openssl, bcmath, exif, sodium
+          coverage: none
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Create local .env for build
+        run: |
+          cat > .env <<'EOF'
+          ${{ secrets.HOSTINGER_ENV }}
+          EOF
+          if [ ! -s .env ]; then
+            echo "ERROR: GitHub Secret HOSTINGER_ENV belum diatur."
+            exit 1
+          fi
+
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Build frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Package application
+        run: |
+          tar -czf chemlos-deploy.tar.gz \
+            --exclude='chemlos-deploy.tar.gz' \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.gitignore' \
+            --exclude='.gitattributes' \
+            --exclude='.vscode' \
+            --exclude='tests' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='.env.production.example' \
+            --exclude='.env.testing' \
+            --exclude='storage/app/public/*' \
+            --exclude='storage/app/private/*' \
+            --exclude='storage/app/backups/*' \
+            --exclude='storage/framework/cache/data/*' \
+            --exclude='storage/framework/cache/laravel-excel' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='storage/framework/testing/*' \
+            --exclude='storage/logs/*' \
+            .
+
+      - name: Upload archive and environment to Hostinger
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          source: "chemlos-deploy.tar.gz,.env"
+          target: ${{ secrets.HOSTINGER_REMOTE_BASE }}
+          timeout: 10m
+          command_timeout: 20m
+
+      - name: Run deployment commands on Hostinger
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          command_timeout: 20m
+          script: |
+            set -e
+
+            APP_DIR="${{ secrets.HOSTINGER_APP_DIR }}"
+            WEB_ROOT="${{ secrets.HOSTINGER_WEB_ROOT }}"
+            REMOTE_BASE="${{ secrets.HOSTINGER_REMOTE_BASE }}"
+            TAR_FILE="$REMOTE_BASE/chemlos-deploy.tar.gz"
+            ENV_FILE="$REMOTE_BASE/.env"
+            PHP_BIN="${{ secrets.HOSTINGER_PHP_BIN }}"
+            [ -z "$PHP_BIN" ] && PHP_BIN="php"
+
+            echo "==> ChemLOS: mulai deployment..."
+
+            # Maintenance mode jika aplikasi lama ada
+            if [ -f "$APP_DIR/artisan" ]; then
+              $PHP_BIN "$APP_DIR/artisan" down --render="errors::503" || true
+            fi
+
+            # Backup upload/storage dari deploy sebelumnya
+            BACKUP_DIR="$REMOTE_BASE/chemlos-backup-$(date +%s)"
+            if [ -d "$APP_DIR" ]; then
+              mkdir -p "$BACKUP_DIR"
+              [ -d "$APP_DIR/storage/app" ] && cp -a "$APP_DIR/storage/app" "$BACKUP_DIR/" || true
+              [ -f "$APP_DIR/.env" ] && cp -a "$APP_DIR/.env" "$BACKUP_DIR/.env" || true
+            fi
+
+            # Hapus aplikasi lama dan ekstrak yang baru
+            rm -rf "$APP_DIR"
+            mkdir -p "$APP_DIR"
+            tar -xzf "$TAR_FILE" -C "$APP_DIR"
+            rm -f "$TAR_FILE"
+
+            # Letakkan .env production
+            mv "$ENV_FILE" "$APP_DIR/.env"
+
+            # Jika APP_KEY kosong, generate otomatis
+            if ! grep -qE '^APP_KEY=base64:[A-Za-z0-9+/=]+$' "$APP_DIR/.env"; then
+              echo "==> APP_KEY belum valid, generate otomatis..."
+              $PHP_BIN "$APP_DIR/artisan" key:generate --force
+            fi
+
+            # Kembalikan storage/app (upload pengguna) jika ada backup
+            if [ -d "$BACKUP_DIR/storage/app" ]; then
+              rm -rf "$APP_DIR/storage/app"
+              cp -a "$BACKUP_DIR/storage/app" "$APP_DIR/storage/"
+            fi
+
+            # Pastikan direktori runtime ada
+            mkdir -p "$APP_DIR/storage/framework/cache/data"
+            mkdir -p "$APP_DIR/storage/framework/sessions"
+            mkdir -p "$APP_DIR/storage/framework/views"
+            mkdir -p "$APP_DIR/storage/framework/testing"
+            mkdir -p "$APP_DIR/storage/logs"
+            mkdir -p "$APP_DIR/storage/app/public"
+            mkdir -p "$APP_DIR/storage/app/private"
+            mkdir -p "$APP_DIR/storage/app/backups"
+
+            # Permission
+            chmod -R 755 "$APP_DIR"
+            find "$APP_DIR" -type f -exec chmod 644 {} \;
+            chmod -R 775 "$APP_DIR/storage" "$APP_DIR/bootstrap/cache"
+
+            cd "$APP_DIR"
+
+            # Storage link
+            $PHP_BIN artisan storage:link --force
+
+            # Database migrasi + seeder pengaturan
+            $PHP_BIN artisan migrate --force
+            $PHP_BIN artisan db:seed --class=PengaturanSeeder --force
+
+            # Seed demo hanya jika diaktifkan
+            if [ "${{ secrets.HOSTINGER_SEED_DEMO }}" = "true" ]; then
+              $PHP_BIN artisan db:seed --class=DatabaseSeeder --force
+            fi
+
+            # Cache Laravel
+            $PHP_BIN artisan config:clear
+            $PHP_BIN artisan route:clear
+            $PHP_BIN artisan view:clear
+            $PHP_BIN artisan event:clear
+            $PHP_BIN artisan config:cache
+            $PHP_BIN artisan route:cache
+            $PHP_BIN artisan view:cache
+            $PHP_BIN artisan event:cache
+
+            # Final check
+            $PHP_BIN artisan chemlos:deploy-check
+
+            # Selesai maintenance
+            $PHP_BIN artisan up
+
+            # Hubungkan public_html ke public Laravel
+            if [ -d "$WEB_ROOT" ] && [ ! -L "$WEB_ROOT" ]; then
+              mv "$WEB_ROOT" "$WEB_ROOT.bak.$(date +%s)"
+            fi
+            if [ ! -e "$WEB_ROOT" ]; then
+              ln -sfn "$APP_DIR/public" "$WEB_ROOT"
+            fi
+
+            # Setup cron untuk scheduler (queue diproses oleh Schedule::command)
+            if command -v crontab >/dev/null 2>&1; then
+              CRON_TEMP=$(mktemp)
+              crontab -l 2>/dev/null | grep -v 'artisan schedule:run' > "$CRON_TEMP" || true
+              echo "* * * * * $PHP_BIN $APP_DIR/artisan schedule:run >> $APP_DIR/storage/logs/scheduler.log 2>&1" >> "$CRON_TEMP"
+              sort -u -o "$CRON_TEMP" "$CRON_TEMP"
+              crontab "$CRON_TEMP" || true
+              rm -f "$CRON_TEMP"
+            fi
+
+            # Cleanup backup deploy
+            rm -rf "$BACKUP_DIR"
+
+            # Hapus backup lama, pertahankan 3 terakhir
+            find "$REMOTE_BASE" -maxdepth 1 -type d -name 'chemlos-backup-*' | sort -r | tail -n +4 | xargs -r rm -rf
+
+            echo "==> ChemLOS: deployment SELESAI."

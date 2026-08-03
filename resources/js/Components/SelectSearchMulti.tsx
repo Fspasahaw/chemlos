@@ -1,0 +1,130 @@
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+interface Option {
+    value: string;
+    label: string;
+}
+
+interface SelectSearchMultiProps {
+    label?: string;
+    options: Option[];
+    value: string[];
+    onChange: (value: string[]) => void;
+    placeholder?: string;
+    error?: string;
+    disabled?: boolean;
+    className?: string;
+}
+
+export function SelectSearchMulti({
+    label,
+    options,
+    value,
+    onChange,
+    placeholder = 'Cari...',
+    error,
+    disabled,
+    className = '',
+}: SelectSearchMultiProps) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const ref = useRef<HTMLDivElement>(null);
+
+    const filtered = options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()));
+
+    useEffect(() => {
+        const handle = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handle);
+        return () => document.removeEventListener('mousedown', handle);
+    }, []);
+
+    const toggle = (v: string) => {
+        const next = value.includes(v) ? value.filter((x) => x !== v) : [...value, v];
+        onChange(next);
+        setSearch('');
+    };
+
+    const remove = (v: string) => {
+        onChange(value.filter((x) => x !== v));
+    };
+
+    return (
+        <div ref={ref} className={`relative ${className}`}>
+            {label && <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">{label}</label>}
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => setOpen(!open)}
+                className={`flex w-full min-h-11 items-start justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900 ${
+                    error ? 'border-rose-300 focus:border-rose-500' : 'border-slate-300 focus:border-indigo-500 dark:border-slate-700'
+                } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
+            >
+                <div className="flex flex-1 flex-wrap gap-1.5">
+                    {value.length === 0 && <span className="text-slate-400">{placeholder}</span>}
+                    {value.map((v) => {
+                        const opt = options.find((o) => o.value === v);
+                        if (!opt) return null;
+                        return (
+                            <span
+                                key={v}
+                                className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
+                            >
+                                {opt.label}
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={(e) => { e.stopPropagation(); remove(v); }}
+                                    className="rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </span>
+                        );
+                    })}
+                </div>
+                <ChevronsUpDown className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+            </button>
+            {open && (
+                <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                    <div className="relative mb-1">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={placeholder}
+                            className="w-full rounded-lg border border-slate-200 bg-transparent py-1.5 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="max-h-48 overflow-auto">
+                        {filtered.length === 0 ? (
+                            <div className="px-3 py-2 text-sm text-slate-500">Tidak ditemukan</div>
+                        ) : (
+                            filtered.map((o) => {
+                                const checked = value.includes(o.value);
+                                return (
+                                    <button
+                                        key={o.value}
+                                        type="button"
+                                        onClick={() => toggle(o.value)}
+                                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                                            checked ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'
+                                        }`}
+                                    >
+                                        {o.label}
+                                        {checked && <Check className="h-4 w-4" />}
+                                    </button>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
+            {error && <p className="mt-1 text-xs text-rose-500">{error}</p>}
+        </div>
+    );
+}

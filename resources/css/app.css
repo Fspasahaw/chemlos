@@ -1,0 +1,355 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../js/**/*.tsx';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    --color-primary-50: #eef2ff;
+    --color-primary-100: #e0e7ff;
+    --color-primary-200: #c7d2fe;
+    --color-primary-300: #a5b4fc;
+    --color-primary-400: #818cf8;
+    --color-primary-500: #6366f1;
+    --color-primary-600: #4f46e5;
+    --color-primary-700: #4338ca;
+    --color-primary-800: #3730a3;
+    --color-primary-900: #312e81;
+
+    --color-secondary-500: #f43f5e;
+    --color-accent-cyan: #06b6d4;
+    --color-accent-neon: #10b981;
+    --color-accent-gold: #f59e0b;
+    --color-accent-purple: #9333ea;
+    --color-accent-orange: #f97316;
+
+    --animate-shimmer: shimmer 1.5s infinite;
+    --animate-fade-in: fadeIn 0.4s ease-out both;
+    --animate-fade-in-up: fadeInUp 0.5s ease-out both;
+    --animate-scale-in: scaleIn 0.2s ease-out both;
+    --animate-slide-in-right: slideInRight 0.4s ease-out both;
+    --animate-hover-lift: hoverLift 0.3s ease-out forwards;
+    --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-16px); }
+}
+
+@keyframes shimmer {
+    100% { transform: translateX(100%); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes hoverLift {
+    from { transform: translateY(0); }
+    to { transform: translateY(-6px); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+    50% { box-shadow: 0 0 24px 8px rgba(99, 102, 241, 0.2); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* FullCalendar custom styles to match ChemLOS design */
+.fc .fc-button,
+.fc .fc-button-group .fc-button,
+.fc .fc-button-primary,
+.fc .fc-button.fc-button-primary,
+.fc .fc-button.fc-button-primary.fc-button-active,
+.fc .fc-button.fc-button-primary:not(:disabled):active,
+.fc .fc-button.fc-button-primary:not(:disabled).fc-button-active {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+    padding: 0.5rem 0.875rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    line-height: 1.25rem !important;
+    border-radius: 9999px !important;
+    border: 1px solid #e2e8f0 !important;
+    background-color: #ffffff !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease !important;
+}
+
+.fc .fc-button:hover,
+.fc .fc-button-group .fc-button:hover,
+.fc .fc-button-primary:hover,
+.fc .fc-button.fc-button-primary:hover {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    transform: translateY(-1px) !important;
+    border-color: #cbd5e1 !important;
+}
+
+.fc .fc-button:active,
+.fc .fc-button.fc-button-primary:not(:disabled):active,
+.fc .fc-button.fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button.fc-button-primary:not(:disabled):active:focus,
+.fc .fc-button.fc-button-primary:not(:disabled).fc-button-active:focus {
+    background-color: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    transform: translateY(0) !important;
+}
+
+.fc .fc-button:focus,
+.fc .fc-button-group .fc-button:focus {
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25) !important;
+    outline: none !important;
+}
+
+.fc .fc-button:disabled,
+.fc .fc-button.fc-button-disabled,
+.fc .fc-button.fc-button-primary:disabled,
+.fc .fc-button.fc-button-primary.fc-button-disabled,
+.fc .fc-today-button:disabled,
+.fc .fc-button.fc-button-disabled.fc-today-button {
+    opacity: 0.85 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+.fc .fc-button-group {
+    display: inline-flex !important;
+    gap: 0.5rem !important;
+}
+
+.fc .fc-button-group .fc-button {
+    border-radius: 9999px !important;
+    margin: 0 !important;
+}
+
+.fc .fc-button .fc-icon {
+    font-size: 0.875rem !important;
+    line-height: 1 !important;
+}
+
+.fc .fc-button .fc-icon {
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
+.fc .fc-toolbar-title {
+    font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: #1e293b;
+}
+
+.dark .fc .fc-toolbar-title {
+    color: #f1f5f9;
+}
+
+.fc .fc-event {
+    cursor: pointer;
+    border-radius: 0.5rem;
+    border: none;
+    padding: 0.125rem 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.fc .fc-event:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+    z-index: 10;
+    background-color: rgba(99, 102, 241, 0.85) !important;
+    color: #ffffff !important;
+}
+
+.dark .fc .fc-event:hover {
+    background-color: rgba(99, 102, 241, 0.9) !important;
+    color: #ffffff !important;
+}
+
+.fc .fc-daygrid-event {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fc .fc-day-today {
+    background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+.dark .fc .fc-day-today {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+.fc .fc-col-header-cell {
+    padding: 0.5rem 0;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.dark .fc .fc-col-header-cell {
+    color: #94a3b8;
+}
+
+.fc .fc-daygrid-day-number,
+.fc .fc-list-day-cushion {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.dark .fc .fc-daygrid-day-number,
+.dark .fc .fc-list-day-cushion {
+    color: #94a3b8;
+}
+
+.fc .fc-list-empty {
+    padding: 2rem;
+    font-size: 0.875rem;
+    color: #94a3b8;
+}
+
+.dark .fc .fc-button,
+.dark .fc .fc-button-group .fc-button,
+.dark .fc .fc-button.fc-button-primary,
+.dark .fc .fc-button.fc-button-primary.fc-button-active,
+.dark .fc .fc-button.fc-button-primary:not(:disabled):active {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+.dark .fc .fc-button:hover,
+.dark .fc .fc-button-group .fc-button:hover,
+.dark .fc .fc-button.fc-button-primary:hover {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #f1f5f9 !important;
+}
+
+.dark .fc .fc-button:disabled,
+.dark .fc .fc-button.fc-button-disabled,
+.dark .fc .fc-button.fc-button-primary:disabled,
+.dark .fc .fc-button.fc-button-primary.fc-button-disabled,
+.dark .fc .fc-today-button:disabled,
+.dark .fc .fc-button.fc-button-disabled.fc-today-button {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+    opacity: 0.75 !important;
+}
+
+.dark .fc .fc-button .fc-icon {
+    color: #cbd5e1 !important;
+}
+
+.dark .fc .fc-daygrid-day {
+    background-color: #0f172a;
+}
+
+.fc .fc-list-event:hover td {
+    background-color: rgba(99, 102, 241, 0.08);
+}
+
+.dark .fc .fc-list-event:hover td {
+    background-color: rgba(99, 102, 241, 0.2);
+}
+
+.fc .fc-list-event,
+.dark .fc .fc-list-event,
+.fc .fc-list-event:hover .fc-list-event-title,
+.dark .fc .fc-list-event:hover .fc-list-event-title,
+.fc .fc-list-event:hover .fc-list-event-time,
+.dark .fc .fc-list-event:hover .fc-list-event-time {
+    color: inherit;
+}
+
+.dark .fc .fc-list-event:hover .fc-list-event-title,
+.dark .fc .fc-list-event:hover .fc-list-event-time,
+.dark .fc .fc-list-event:hover .fc-list-event-dot,
+.dark .fc .fc-list-event:hover .fc-list-event-graphic {
+    color: #f1f5f9;
+}
+
+.dark .fc .fc-list-event td {
+    color: #e2e8f0;
+}
+
+.fc .fc-list-event .fc-list-event-dot {
+    border-color: #6366f1;
+}
