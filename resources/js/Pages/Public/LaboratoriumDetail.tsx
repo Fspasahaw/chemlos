@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Calendar as CalendarIcon, CalendarDays, ChevronLeft, ChevronRight, Clock, Download, FileText, FlaskConical, Grid3X3, Image, Info, List, Mail, MapPin, Phone, Pin, Search, SearchX, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar as CalendarIcon, CalendarDays, ChevronLeft, ChevronRight, Clock, FileText, FlaskConical, Grid3X3, Image, Info, List, Mail, MapPin, Phone, Pin, Search, SearchX, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge } from '../../Components/Badge';
 import { Button } from '../../Components/Button';
@@ -7,6 +7,7 @@ import { Calendar, CalendarEvent } from '../../Components/Calendar';
 import { CardWithBackground } from '../../Components/CardWithBackground';
 import { ImageWithFallback } from '../../Components/ImageWithFallback';
 import { Lightbox } from '../../Components/Lightbox';
+import { DocumentPreview } from '../../Components/DocumentPreview';
 import { SearchInput } from '../../Components/SearchInput';
 import { Select } from '../../Components/Select';
 import { Tabs } from '../../Components/Tabs';
@@ -53,6 +54,7 @@ export default function LaboratoriumDetail({ lab, events, statusOptions }: { lab
     const [viewAlat, setViewAlat] = useState<'grid' | 'list'>('grid');
     const [pageAlat, setPageAlat] = useState<number>(1);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const [selectedDoc, setSelectedDoc] = useState<DokumenItem | null>(null);
     const perPageAlat = 12;
 
     const galeri = (lab as any).laboratoriumGaleris ?? (lab as any).laboratorium_galeris ?? lab.galeri ?? [];
@@ -304,17 +306,31 @@ export default function LaboratoriumDetail({ lab, events, statusOptions }: { lab
                                     <p className="text-center text-slate-500 dark:text-slate-400">Belum ada dokumen.</p>
                                 ) : (
                                     regulerDocs.map((d) => (
-                                        <a key={d.id} href={`/storage/${d.file}`} target="_blank" rel="noreferrer" download className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 transition hover:bg-slate-50 dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800">
+                                        <button
+                                            key={d.id}
+                                            type="button"
+                                            onClick={() => setSelectedDoc(d)}
+                                            className="flex w-full items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 text-left transition hover:bg-slate-50 dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800"
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <FileText className="h-5 w-5 text-indigo-600" />
                                                 <span className="font-medium">{d.judul}</span>
                                                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs uppercase text-slate-600 dark:bg-slate-800">{dokumenJenisMap[d.jenis] ?? d.jenis}</span>
                                             </div>
-                                            <Download className="h-4 w-4 text-slate-400" />
-                                        </a>
+                                            <span className="text-sm text-indigo-600">Lihat</span>
+                                        </button>
                                     ))
                                 )}
                             </div>
+                        )}
+
+                        {selectedDoc && (
+                            <DocumentPreview
+                                file={selectedDoc.file}
+                                title={selectedDoc.judul}
+                                open={!!selectedDoc}
+                                onClose={() => setSelectedDoc(null)}
+                            />
                         )}
 
                         {activeTab === 'tata-tertib' && (

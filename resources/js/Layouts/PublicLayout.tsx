@@ -204,16 +204,14 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                                 ))}
                             </ul>
                         </div>
-                        {isEnabled('kontak') && (
-                            <div>
-                                <h3 className="font-semibold">{t('Kontak', 'Contact')}</h3>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-500 dark:text-slate-400">
-                                    <li>{settings?.['umum.email_kontak'] || '—'}</li>
-                                    <li>+{settings?.['umum.nomor_whatsapp_admin'] || '—'}</li>
-                                    <li>{settings?.['umum.alamat_institusi'] ? (settings['umum.alamat_institusi'] as string).split(',')[0] : '—'}</li>
-                                </ul>
-                            </div>
-                        )}
+                        <div>
+                            <h3 className="font-semibold">{t('Kontak', 'Contact')}</h3>
+                            <ul className="mt-3 space-y-2 text-sm text-slate-500 dark:text-slate-400">
+                                <li>{settings?.['umum.email_kontak'] || '—'}</li>
+                                <li>+{settings?.['umum.nomor_whatsapp_admin'] || '—'}</li>
+                                <li>{settings?.['umum.alamat_institusi'] ? (settings['umum.alamat_institusi'] as string).split(',')[0] : '—'}</li>
+                            </ul>
+                        </div>
                         <div>
                             <h3 className="font-semibold">{t('Legal', 'Legal')}</h3>
                             <ul className="mt-3 space-y-2 text-sm text-slate-500 dark:text-slate-400">

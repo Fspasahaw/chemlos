@@ -6,6 +6,7 @@ import { Calendar, CalendarEvent } from '../../Components/Calendar';
 import { CardWithBackground } from '../../Components/CardWithBackground';
 import { ImageWithFallback } from '../../Components/ImageWithFallback';
 import { Lightbox } from '../../Components/Lightbox';
+import { DocumentPreview } from '../../Components/DocumentPreview';
 import Modal from '../../Components/Modal';
 import { Tabs } from '../../Components/Tabs';
 import { formatDate } from '../../lib/date';
@@ -51,6 +52,7 @@ export default function AlatDetail({ alat, relatedAlats, events, history, status
     const isEnabled = (key: string) => !!features?.[key];
     const [activeTab, setActiveTab] = useState<'info' | 'spesifikasi' | 'galeri' | 'dokumen' | 'video' | 'qr' | 'riwayat' | 'jadwal'>('info');
     const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
+    const [selectedDoc, setSelectedDoc] = useState<DokumenItem | null>(null);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [showQr, setShowQr] = useState(false);
 
@@ -196,29 +198,17 @@ export default function AlatDetail({ alat, relatedAlats, events, history, status
                                 {allGallery.length === 0 ? (
                                     <p className="text-center text-slate-500 dark:text-slate-400">Tidak ada galeri.</p>
                                 ) : (
-                                    <div className="space-y-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => setLightboxIndex(0)}
-                                            className="relative aspect-video w-full overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80"
-                                        >
-                                            <ImageWithFallback src={allGallery[0].src} alt={allGallery[0].alt} className="h-full w-full object-cover" />
-                                            <span className="absolute bottom-3 right-3 rounded-full bg-slate-900/60 px-3 py-1 text-xs text-white">{allGallery.length} foto</span>
-                                        </button>
-                                        {allGallery.length > 1 && (
-                                            <div className="flex gap-2 overflow-x-auto pb-2">
-                                                {allGallery.map((img, idx) => (
-                                                    <button
-                                                        key={idx}
-                                                        type="button"
-                                                        onClick={() => setLightboxIndex(idx)}
-                                                        className="h-20 w-28 shrink-0 overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800/80"
-                                                    >
-                                                        <ImageWithFallback src={img.src} alt={img.alt} className="h-full w-full object-cover" />
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
+                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        {allGallery.map((img, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => setLightboxIndex(idx)}
+                                                className="overflow-hidden rounded-2xl border border-slate-200/80 text-left dark:border-slate-800/80"
+                                            >
+                                                <ImageWithFallback src={img.src} alt={img.alt} className="h-56 w-full object-cover transition hover:scale-105" />
+                                            </button>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -230,14 +220,19 @@ export default function AlatDetail({ alat, relatedAlats, events, history, status
                                     <p className="text-center text-slate-500 dark:text-slate-400">Tidak ada dokumen.</p>
                                 ) : (
                                     alat.dokumen.map((d) => (
-                                        <a key={d.id} href={`/storage/${d.file}`} target="_blank" rel="noreferrer" download className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 transition hover:bg-slate-50 dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800">
+                                        <button
+                                            key={d.id}
+                                            type="button"
+                                            onClick={() => setSelectedDoc(d)}
+                                            className="flex w-full items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 text-left transition hover:bg-slate-50 dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800"
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <FileText className="h-5 w-5 text-violet-600" />
                                                 <span className="font-medium">{d.judul}</span>
                                                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs uppercase text-slate-600 dark:bg-slate-800">{dokumenJenisMap[d.jenis] ?? d.jenis}</span>
                                             </div>
-                                            <Download className="h-4 w-4 text-slate-400" />
-                                        </a>
+                                            <span className="text-sm text-violet-600">Lihat</span>
+                                        </button>
                                     ))
                                 )}
                             </div>
@@ -388,6 +383,15 @@ export default function AlatDetail({ alat, relatedAlats, events, history, status
                     )}
                 </div>
             </Modal>
+
+            {selectedDoc && (
+                <DocumentPreview
+                    file={selectedDoc.file}
+                    title={selectedDoc.judul}
+                    open={!!selectedDoc}
+                    onClose={() => setSelectedDoc(null)}
+                />
+            )}
 
             <Modal open={showQr} onClose={() => setShowQr(false)} title={`QR Code ${alat.nama}`} size="sm">
                 {alat.qr_kode_path ? (

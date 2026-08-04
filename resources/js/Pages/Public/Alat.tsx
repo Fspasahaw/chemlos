@@ -61,19 +61,21 @@ export default function Alat({ alat, filters, laboratoriumOptions, kategoriOptio
     const [view, setView] = useState<'grid' | 'list'>('grid');
 
     const applyFilters = (payload: Record<string, string> = {}) => {
+        const nextSearch = payload.search !== undefined ? payload.search : search;
+        const nextLab = payload.laboratorium !== undefined ? payload.laboratorium : labFilter;
+        const nextKategori = payload.kategori !== undefined ? payload.kategori : kategoriFilter;
+        const nextStatus = payload.status !== undefined ? payload.status : statusFilter;
+        const nextKondisi = payload.kondisi !== undefined ? payload.kondisi : kondisiFilter;
+        const nextSort = payload.sort !== undefined ? payload.sort : sort;
+
         const params: Record<string, string> = {};
-        if (search) params.search = search;
-        if (labFilter) params.laboratorium = labFilter;
-        if (kategoriFilter) params.kategori = kategoriFilter;
-        if (statusFilter || payload.status !== undefined) {
-            const next = payload.status !== undefined ? payload.status : statusFilter;
-            if (next) params.status = next;
-        }
-        if (kondisiFilter || payload.kondisi !== undefined) {
-            const next = payload.kondisi !== undefined ? payload.kondisi : kondisiFilter;
-            if (next) params.kondisi = next;
-        }
-        if (sort && sort !== 'terbaru') params.sort = sort;
+        if (nextSearch) params.search = nextSearch;
+        if (nextLab) params.laboratorium = nextLab;
+        if (nextKategori) params.kategori = nextKategori;
+        if (nextStatus) params.status = nextStatus;
+        if (nextKondisi) params.kondisi = nextKondisi;
+        if (nextSort && nextSort !== 'terbaru') params.sort = nextSort;
+
         router.get('/alat', params, { preserveState: true, preserveScroll: true });
     };
 

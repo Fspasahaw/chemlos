@@ -1,10 +1,11 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { AlertCircle, Eye, EyeOff, FlaskConical, Lock, Mail, Phone, User } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, FlaskConical, GraduationCap, Lock, Mail, Phone, User, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/Components/Button';
 import { Checkbox } from '@/Components/Checkbox';
 import { Input } from '@/Components/Input';
+import { LegalText } from '@/Components/LegalText';
 import Modal from '@/Components/Modal';
 import PasswordIndicator from '@/Components/PasswordIndicator';
 import { Select } from '@/Components/Select';
@@ -92,7 +93,7 @@ export default function Daftar() {
         }
     };
 
-    const programStudiOptions = (programStudi || []).map((ps: any) => ({ value: String(ps.id), label: ps.nama }));
+    const programStudiOptions = (programStudi || []).map((ps: any) => ({ value: String(ps.id), label: `${ps.jenjang ? `${ps.jenjang} ` : ''}${ps.nama}`.trim() }));
 
     return (
         <>
@@ -124,23 +125,43 @@ export default function Daftar() {
                     required
                 />
 
-                <Select
-                    label={t('Peran', 'Role')}
-                    options={[
-                        { value: 'mahasiswa', label: t('Mahasiswa', 'Student') },
-                        { value: 'dosen', label: t('Dosen', 'Lecturer') },
-                    ]}
-                    value={form.peran}
-                    onChange={(e) => {
-                        handleChange('peran', e.target.value);
-                        if (e.target.value === 'mahasiswa' && programStudi?.[0]) {
-                            handleChange('program_studi_id', String(programStudi[0].id));
-                        } else {
-                            handleChange('program_studi_id', '');
-                        }
-                    }}
-                    error={errors.peran}
-                />
+                <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">{t('Pilih Peran', 'Choose Role')}</label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {[
+                            { value: 'mahasiswa', label: t('Mahasiswa', 'Student'), desc: t('Untuk mahasiswa FTUI', 'For FTUI students'), icon: GraduationCap },
+                            { value: 'dosen', label: t('Dosen', 'Lecturer'), desc: t('Untuk dosen & staf akademik', 'For lecturers & academic staff'), icon: Users },
+                        ].map((r) => {
+                            const active = form.peran === r.value;
+                            return (
+                                <button
+                                    key={r.value}
+                                    type="button"
+                                    onClick={() => {
+                                        handleChange('peran', r.value);
+                                        if (r.value === 'mahasiswa' && programStudi?.[0]) {
+                                            handleChange('program_studi_id', String(programStudi[0].id));
+                                        } else {
+                                            handleChange('program_studi_id', '');
+                                        }
+                                    }}
+                                    className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${
+                                        active
+                                            ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-900/20'
+                                            : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800'
+                                    }`}
+                                >
+                                    <r.icon className={`mt-0.5 h-5 w-5 ${active ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400'}`} />
+                                    <div>
+                                        <p className={`font-semibold ${active ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-900 dark:text-slate-100'}`}>{r.label}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{r.desc}</p>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {errors.peran && <p className="mt-2 text-xs text-rose-500">{errors.peran}</p>}
+                </div>
 
                 <Input
                     type="email"
@@ -269,11 +290,12 @@ export default function Daftar() {
                     </Button>
                 }
             >
-                <div className="whitespace-pre-line text-slate-700 dark:text-slate-300">
-                    {modal === 'terms'
-                        ? settings?.['legal.syarat_ketentuan'] || t('Syarat dan Ketentuan belum tersedia.', 'Terms not available.')
-                        : settings?.['legal.kebijakan_privasi'] || t('Kebijakan Privasi belum tersedia.', 'Privacy policy not available.')}
-                </div>
+                <LegalText
+                    content={modal === 'terms'
+                        ? settings?.['legal.syarat_ketentuan'] || ''
+                        : settings?.['legal.kebijakan_privasi'] || ''
+                    }
+                />
             </Modal>
         </>
     );

@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Home, Lightbulb, Target } from 'lucide-react';
+import { ExternalLink, GraduationCap, Home, Lightbulb, Target, University, Building2 } from 'lucide-react';
 
 interface TentangProps {
     tentang?: {
@@ -23,9 +23,9 @@ export default function Tentang({ tentang }: TentangProps) {
     ];
 
     const milestones = [
-        { tahun: '2024', title: 'Inisiasi ChemLOS', desc: 'Pengembangan sistem manajemen peminjaman alat laboratorium.' },
-        { tahun: '2025', title: 'Pilot Testing', desc: 'Uji coba di departemen Teknik Kimia FTUI.' },
-        { tahun: '2026', title: 'Launch Resmi', desc: 'Sistem siap digunakan oleh seluruh civitas akademika.' },
+        { tahun: '2026', title: 'Perencanaan & Desain', desc: 'Mendesain arsitektur ChemLOS, melakukan analisis kebutuhan peminjaman alat, merancang database, dan menetapkan alur persetujuan berbasis peran.' },
+        { tahun: '2026', title: 'Pengembangan Inti', desc: 'Mengimplementasikan manajemen alat, laboratorium, peminjaman multi-peran, notifikasi real-time, pelacakan kerusakan, dan dashboard analytics.' },
+        { tahun: '2026', title: 'Pilot & Launch', desc: 'Melakukan uji coba pilot di lingkungan Departemen Teknik Kimia FTUI, menyempurnakan UX, dan meluncurkan resmi untuk civitas akademika.' },
     ];
 
     return (
@@ -94,11 +94,28 @@ export default function Tentang({ tentang }: TentangProps) {
 
                 <div className="mt-16">
                     <h2 className="mb-6 text-center text-2xl font-bold">Didukung Oleh</h2>
-                    <div className="flex flex-wrap items-center justify-center gap-6">
-                        {['Departemen Teknik Kimia FTUI', 'Fakultas Teknik UI', 'Universitas Indonesia'].map((m) => (
-                            <div key={m} className="rounded-2xl border border-slate-200/80 bg-white px-6 py-4 text-center text-sm font-medium text-slate-600 dark:border-slate-800/80 dark:bg-slate-900 dark:text-slate-300">
-                                {m}
-                            </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        {[
+                            { name: 'Departemen Teknik Kimia', sub: 'Fakultas Teknik UI', url: 'https://che.ui.ac.id/', icon: FlaskConical },
+                            { name: 'Fakultas Teknik', sub: 'Universitas Indonesia', url: 'https://eng.ui.ac.id/', icon: Building2 },
+                            { name: 'Universitas Indonesia', sub: 'Pendidikan & Riset', url: 'https://www.ui.ac.id/', icon: University },
+                        ].map((m) => (
+                            <a
+                                key={m.url}
+                                href={m.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="group flex flex-col items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-6 text-center transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800/80 dark:bg-slate-900"
+                            >
+                                <m.icon className="h-10 w-10 text-indigo-600 transition group-hover:scale-110" />
+                                <div>
+                                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">{m.name}</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">{m.sub}</p>
+                                </div>
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600">
+                                    Kunjungi Website <ExternalLink className="h-3 w-3" />
+                                </span>
+                            </a>
                         ))}
                     </div>
                 </div>
