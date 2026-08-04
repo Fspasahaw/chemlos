@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ExternalLink, GraduationCap, Home, Lightbulb, Target, University, Building2 } from 'lucide-react';
+import { ExternalLink, FlaskConical, GraduationCap, Home, Lightbulb, Target, University, Building2 } from 'lucide-react';
 
 interface TentangProps {
     tentang?: {

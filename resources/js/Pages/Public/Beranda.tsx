@@ -215,27 +215,29 @@ export default function Beranda({ appName, stats, labs, events, labOptions, stat
             </section>
 
             <section className="bg-slate-50 py-16 dark:bg-slate-900/50">
-                <div className="mx-auto max-w-7xl px-4">
-                    <div className="mb-10 text-center">
+                <div className="mx-auto max-w-3xl px-4">
+                    <div className="mb-12 text-center">
                         <h2 className="text-2xl font-bold md:text-3xl">{t('Cara Penggunaan', 'How It Works')}</h2>
-                        <p className="mt-2 text-slate-500 dark:text-slate-400">{t('Alur peminjaman alat yang mudah dan transparan.', 'Easy and transparent equipment lending flow.')}</p>
+                        <p className="mx-auto mt-2 max-w-xl text-slate-500 dark:text-slate-400">
+                            {t('Alur peminjaman alat yang mudah dan transparan.', 'Easy and transparent equipment lending flow.')}
+                        </p>
                     </div>
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {steps.map((step, idx) => {
+                    <div className="relative">
+                        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-indigo-200 dark:bg-indigo-800" />
+                        {steps.map((step) => {
                             const Icon = step.icon;
                             return (
-                                <div key={step.key} className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800/80 dark:bg-slate-900">
-                                    <div className="mb-4 flex items-center gap-3">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300">
-                                            <span className="text-sm font-bold">{step.key}</span>
-                                        </div>
-                                        {Icon && <Icon className="h-5 w-5 text-slate-400" />}
+                                <div key={step.key} className="relative mb-10 flex gap-6 last:mb-0">
+                                    <div className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg ring-4 ring-slate-50 dark:ring-slate-900">
+                                        <Icon className="h-6 w-6" />
+                                        <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-bold text-indigo-600 shadow-sm dark:bg-slate-800 dark:text-indigo-300">
+                                            {step.key}
+                                        </span>
                                     </div>
-                                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">{step.label}</h3>
-                                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{step.description}</p>
-                                    {idx < steps.length - 1 && (
-                                        <div className="absolute -right-3 top-1/2 hidden -translate-y-1/2 text-slate-200 dark:text-slate-700 lg:block">&rarr;</div>
-                                    )}
+                                    <div className="flex-1 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-800/80 dark:bg-slate-900">
+                                        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{step.label}</h3>
+                                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{step.description}</p>
+                                    </div>
                                 </div>
                             );
                         })}
