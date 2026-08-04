@@ -10,6 +10,7 @@ import { NumberStepper } from '@/Components/NumberStepper';
 import { Select } from '@/Components/Select';
 import { Textarea } from '@/Components/Textarea';
 import { useLang } from '@/Providers/LanguageProvider';
+import { toDateInput } from '@/lib/date';
 import { useRecaptcha } from '@/Hooks/useRecaptcha';
 
 export default function LengkapiProfil() {
@@ -19,11 +20,6 @@ export default function LengkapiProfil() {
     const user = auth?.user;
     const isMahasiswa = user?.roles?.some((r: any) => r.name === 'mahasiswa');
 
-    const toDateInput = (value?: string) => {
-        if (!value) return '';
-        const d = new Date(value);
-        return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
-    };
 
     const [form, setForm] = useState({
         no_hp: user?.no_hp ?? '',

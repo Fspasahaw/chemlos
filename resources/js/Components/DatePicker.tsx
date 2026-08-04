@@ -2,6 +2,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-reac
 import { addMonths, eachDayOfInterval, endOfMonth, format, getDate, isSameDay, isSameMonth, isToday, startOfMonth, startOfWeek, subMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { forwardRef, InputHTMLAttributes, useEffect, useRef, useState } from 'react';
+import { parseLocalDate } from '../lib/date';
 
 type DatePickerProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> & {
     label?: string;
@@ -12,13 +13,14 @@ type DatePickerProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onC
 export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function DatePicker({ label, error, value, onChange, className = '', ...props }, ref) {
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState(() => {
-        if (typeof value === 'string' && value) return new Date(value);
-        return new Date();
+        const parsed = typeof value === 'string' && value ? parseLocalDate(value) : null;
+        return parsed ?? new Date();
     });
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (typeof value === 'string' && value) setViewDate(new Date(value));
+        const parsed = typeof value === 'string' && value ? parseLocalDate(value) : null;
+        if (parsed) setViewDate(parsed);
     }, [value]);
 
     useEffect(() => {
@@ -30,7 +32,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
     }, [open]);
 
     const currentValue = typeof value === 'string' ? value : '';
-    const selectedDate = currentValue ? new Date(currentValue) : null;
+    const selectedDate = currentValue ? parseLocalDate(currentValue) : null;
 
     const monthStart = startOfMonth(viewDate);
     const monthEnd = endOfMonth(viewDate);
@@ -44,7 +46,22 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
         setOpen(false);
     };
 
-    const displayValue = currentValue ? format(new Date(currentValue), 'dd/MM/yyyy', { locale: id }) : 'Pilih tanggal';
+    const displayDate = selectedDate ?? (currentValue ? parseLocalDate(currentValue) : null);
+    const displayValue = displayDate ? format(displayDate, 'dd/MM/yyyy', { locale: id }) : 'Pilih tanggal';
+
+    const currentYear = new Date().getFullYear();
+    const minYear = props.min ? parseLocalDate(String(props.min))?.getFullYear() ?? currentYear - 100 : currentYear - 100;
+    const maxYear = props.max ? parseLocalDate(String(props.max))?.getFullYear() ?? currentYear + 10 : currentYear + 10;
+    const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+    const months = Array.from({ length: 12 }, (_, i) => ({ value: i, label: format(new Date(currentYear, i, 1), 'MMMM', { locale: id }) }));
+
+    const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setViewDate(new Date(viewDate.getFullYear(), Number(e.target.value), 1));
+    };
+
+    const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setViewDate(new Date(Number(e.target.value), viewDate.getMonth(), 1));
+    };
 
     return (
         <div className={`relative w-full ${className}`} ref={containerRef}>
@@ -67,11 +84,30 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
             </button>
             {open && (
                 <div className="absolute z-50 mt-1 w-72 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xl dark:border-slate-700/80 dark:bg-slate-900">
-                    <div className="mb-3 flex items-center justify-between">
+                    <div className="mb-3 flex items-center justify-between gap-1">
                         <button type="button" onClick={() => setViewDate(subMonths(viewDate, 1))} className="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800">
                             <ChevronLeft className="h-4 w-4" />
                         </button>
-                        <span className="text-sm font-semibold capitalize">{format(viewDate, 'MMMM yyyy', { locale: id })}</span>
+                        <div className="flex items-center gap-1">
+                            <select
+                                value={viewDate.getMonth()}
+                                onChange={handleMonthChange}
+                                className="rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                            >
+                                {months.map((m) => (
+                                    <option key={m.value} value={m.value}>{m.label}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={viewDate.getFullYear()}
+                                onChange={handleYearChange}
+                                className="rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                            >
+                                {years.map((y) => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                        </div>
                         <button type="button" onClick={() => setViewDate(addMonths(viewDate, 1))} className="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800">
                             <ChevronRight className="h-4 w-4" />
                         </button>
@@ -88,7 +124,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
                             const today = isToday(day);
                             return (
                                 <button
-                                    key={day.toISOString()}
+                                    key={format(day, 'yyyy-MM-dd')}
                                     type="button"
                                     onClick={() => selectDate(day)}
                                     className={`flex h-8 w-8 items-center justify-center rounded-full text-sm transition ${

@@ -41,7 +41,7 @@ export default function Tutorial({ tutorials, filters, jenisOptions }: TutorialP
             const next = payload.jenis !== undefined ? payload.jenis : jenis;
             if (next) params.jenis = next;
         }
-        router.get('/tutorial', params, { preserveState: true, preserveScroll: true });
+        router.get('/tutorial', params, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const formatDurasi = (s: number | null) => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : null;
@@ -70,7 +70,7 @@ export default function Tutorial({ tutorials, filters, jenisOptions }: TutorialP
                             const params: Record<string, string> = {};
                             if (val) params.search = val;
                             if (jenis) params.jenis = jenis;
-                            router.get('/tutorial', params, { preserveState: true, preserveScroll: true });
+                            router.get('/tutorial', params, { preserveState: true, preserveScroll: true, replace: true });
                         }}
                         placeholder="Cari tutorial..."
                         className="flex-1"

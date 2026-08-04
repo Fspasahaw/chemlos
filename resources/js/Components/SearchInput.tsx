@@ -1,5 +1,5 @@
 import { Search, X } from 'lucide-react';
-import { forwardRef, InputHTMLAttributes, useEffect, useRef, useState } from 'react';
+import { forwardRef, InputHTMLAttributes, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
     value?: string;
@@ -15,25 +15,40 @@ interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, '
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
     ({ value, onChange, onSearch, debounce = 300, variant = 'default', placeholder = 'Cari...', className = '', loading, ...props }, ref) => {
         const [internal, setInternal] = useState(value ?? '');
+        const inputRef = useRef<HTMLInputElement>(null);
         const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+        const onChangeRef = useRef(onChange);
+        const onSearchRef = useRef(onSearch);
+
+        useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
 
         useEffect(() => {
-            setInternal(value ?? '');
+            onChangeRef.current = onChange;
+            onSearchRef.current = onSearch;
+        }, [onChange, onSearch]);
+
+        useEffect(() => {
+            const next = value ?? '';
+            if (next !== internal && document.activeElement !== inputRef.current) {
+                setInternal(next);
+            }
         }, [value]);
 
-        const handleChange = (val: string) => {
+        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
             setInternal(val);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => {
-                if (onChange) onChange(val);
-                if (onSearch) onSearch(val);
+                onChangeRef.current?.(val);
+                onSearchRef.current?.(val);
             }, debounce);
         };
 
         const clear = () => {
             setInternal('');
-            if (onChange) onChange('');
-            if (onSearch) onSearch('');
+            onChangeRef.current?.('');
+            onSearchRef.current?.('');
+            inputRef.current?.focus();
         };
 
         const rounded = variant === 'pill' ? 'rounded-full' : 'rounded-xl';
@@ -44,10 +59,10 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
                     <Search className="h-4 w-4" />
                 </span>
                 <input
-                    ref={ref}
+                    ref={inputRef}
                     type="text"
                     value={internal}
-                    onChange={(e) => handleChange(e.target.value)}
+                    onChange={handleChange}
                     placeholder={placeholder}
                     className={`w-full border border-slate-200 bg-white py-2.5 pl-10 pr-9 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 ${rounded}`}
                     {...props}

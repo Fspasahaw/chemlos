@@ -56,7 +56,7 @@ export default function Index() {
     const [sumber, setSumber] = useState(filters?.sumber ?? '');
     const base = '/dashboard/admin/video-tutorial';
 
-    const cari = () => router.get(base, { search, jenis, alat, status, sumber }, { preserveState: true });
+    const cari = (term?: string) => router.get(base, { search: term ?? search, jenis, alat, status, sumber }, { preserveState: true, preserveScroll: true, replace: true });
 
     const alatFilterOptions = [{ value: '', label: 'Semua Alat' }, ...alatOptions.map((a: any) => ({ value: String(a.id), label: a.nama }))];
 
@@ -125,10 +125,10 @@ export default function Index() {
                     <Button onClick={cari} size="md">Cari</Button>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                    <FilterChips options={jenisOptions} value={jenis} onChange={(v) => { setJenis(v as string); router.get(base, { search, jenis: v, alat, status, sumber }, { preserveState: true }); }} />
-                    <SelectSearch options={alatFilterOptions} value={alat} onChange={(v) => { setAlat(v); router.get(base, { search, jenis, alat: v, status, sumber }, { preserveState: true }); }} placeholder="Filter alat" className="w-48" />
-                    <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, jenis, alat, status: v, sumber }, { preserveState: true }); }} />
-                    <FilterChips options={sumberOptions} value={sumber} onChange={(v) => { setSumber(v as string); router.get(base, { search, jenis, alat, status, sumber: v }, { preserveState: true }); }} />
+                    <FilterChips options={jenisOptions} value={jenis} onChange={(v) => { setJenis(v as string); router.get(base, { search, jenis: v, alat, status, sumber }, { preserveState: true, preserveScroll: true, replace: true }); }} />
+                    <SelectSearch options={alatFilterOptions} value={alat} onChange={(v) => { setAlat(v); router.get(base, { search, jenis, alat: v, status, sumber }, { preserveState: true, preserveScroll: true, replace: true }); }} placeholder="Filter alat" className="w-48" />
+                    <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, jenis, alat, status: v, sumber }, { preserveState: true, preserveScroll: true, replace: true }); }} />
+                    <FilterChips options={sumberOptions} value={sumber} onChange={(v) => { setSumber(v as string); router.get(base, { search, jenis, alat, status, sumber: v }, { preserveState: true, preserveScroll: true, replace: true }); }} />
                 </div>
             </div>
 

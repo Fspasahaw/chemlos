@@ -15,7 +15,7 @@ export default function Index() {
     const [search, setSearch] = useState(filters?.search ?? '');
     const isKetuaProdi = ketua_prodi?.jabatan_pimpinan === 'ketua_program_studi' && ketua_prodi?.program_studi_id;
 
-    const apply = (params: Record<string, string>) => router.get('/dashboard/pimpinan/program-studi', params, { preserveState: true, preserveScroll: true });
+    const apply = (params: Record<string, string>) => router.get('/dashboard/pimpinan/program-studi', params, { preserveState: true, preserveScroll: true, replace: true });
 
     return (
         <>
@@ -29,7 +29,7 @@ export default function Index() {
                     <SearchInput
                         value={search}
                         onChange={(v) => setSearch(v)}
-                        onSearch={() => apply({ search })}
+                        onSearch={(val) => apply({ search: val })}
                         placeholder="Cari nama/kode"
                         className="flex-1"
                     />

@@ -28,7 +28,7 @@ export default function Index() {
     const [rejectId, setRejectId] = useState<number | null>(null);
     const [reason, setReason] = useState('');
 
-    const apply = (params: Record<string, string>) => router.get('/dashboard/laboran/verifikasi-akun', params, { preserveState: true, preserveScroll: true });
+    const apply = (params: Record<string, string>) => router.get('/dashboard/laboran/verifikasi-akun', params, { preserveState: true, preserveScroll: true, replace: true });
 
     const action = (url: string, body?: Record<string, any>) => router.post(url, body ?? {}, { preserveScroll: true });
 
@@ -109,7 +109,7 @@ export default function Index() {
                     <SearchInput
                         value={search}
                         onChange={(v) => setSearch(v)}
-                        onSearch={() => apply({ search })}
+                        onSearch={(val) => apply({ search: val })}
                         placeholder="Cari nama/email/NPM/NIP"
                         className="flex-1"
                     />

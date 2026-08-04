@@ -47,7 +47,7 @@ export default function Index() {
     const [alasan, setAlasan] = useState('');
     const base = '/dashboard/admin/peminjaman';
 
-    const cari = () => router.get(base, { search, status, laboratorium: lab, start, end }, { preserveState: true });
+    const cari = (term?: string) => router.get(base, { search: term ?? search, status, laboratorium: lab, start, end }, { preserveState: true, preserveScroll: true, replace: true });
 
     const labOptions = [
         { value: '', label: 'Semua Lab' },
@@ -113,7 +113,7 @@ export default function Index() {
                     <DatePicker value={end} onChange={(e) => setEnd(e.target.value)} placeholder="Selesai" className="max-w-[180px]" />
                     <Button onClick={cari} size="md">Cari</Button>
                 </div>
-                <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v, laboratorium: lab, start, end }, { preserveState: true }); }} />
+                <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v, laboratorium: lab, start, end }, { preserveState: true, preserveScroll: true, replace: true }); }} />
             </div>
             <DataTable isLoading={loading} columns={columns} data={items.data as Peminjaman[]} keyExtractor={(p) => p.id} emptyText="Tidak ada data peminjaman." />
             <Pagination links={items.links} from={items.from} to={items.to} total={items.total} />

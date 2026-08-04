@@ -67,7 +67,7 @@ export default function Index() {
         ...Object.entries(kategoris as Record<string, string>).map(([id, nama]) => ({ value: id, label: nama })),
     ], [kategoris]);
 
-    const cari = () => router.get(base, { search, laboratorium: lab, kategori: kat }, { preserveState: true });
+    const cari = (term?: string) => router.get(base, { search: term ?? search, laboratorium: lab, kategori: kat }, { preserveState: true, preserveScroll: true, replace: true });
 
     const columns = [
         { header: 'Nama', accessor: 'nama' as keyof Tool },

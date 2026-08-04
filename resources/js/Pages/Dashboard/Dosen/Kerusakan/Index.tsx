@@ -15,7 +15,7 @@ export default function Index() {
     const { items, filters } = usePage().props as any;
     const [search, setSearch] = useState(filters?.search ?? '');
 
-    const apply = (params: Record<string, string>) => router.get('/dashboard/dosen/kerusakan', params, { preserveState: true, preserveScroll: true });
+    const apply = (params: Record<string, string>) => router.get('/dashboard/dosen/kerusakan', params, { preserveState: true, preserveScroll: true, replace: true });
 
     return (
         <>
@@ -29,7 +29,7 @@ export default function Index() {
                     <SearchInput
                         value={search}
                         onChange={(v) => setSearch(v)}
-                        onSearch={() => apply({ search })}
+                        onSearch={(val) => apply({ search: val })}
                         placeholder="Cari alat/kode"
                         className="flex-1"
                     />

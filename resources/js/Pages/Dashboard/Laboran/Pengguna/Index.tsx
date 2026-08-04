@@ -45,7 +45,7 @@ export default function Index() {
 
     useEffect(() => {
         const t = setTimeout(() => {
-            router.get('/dashboard/laboran/pengguna', { search, role, status }, { preserveState: true, preserveScroll: true });
+            router.get('/dashboard/laboran/pengguna', { search, role, status }, { preserveState: true, preserveScroll: true, replace: true });
         }, 400);
         return () => clearTimeout(t);
     }, [search, role, status]);

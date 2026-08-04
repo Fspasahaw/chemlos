@@ -62,7 +62,7 @@ export default function Index() {
     const [rejectReason, setRejectReason] = useState('');
     const base = '/dashboard/admin/users';
 
-    const cari = () => router.get(base, { search, status, role }, { preserveState: true });
+    const cari = (term?: string) => router.get(base, { search: term ?? search, status, role }, { preserveState: true, preserveScroll: true, replace: true });
 
     const action = (url: string, userId: number, payload: Record<string, any> = {}) => {
         setLoadingId(userId);
@@ -223,12 +223,12 @@ export default function Index() {
                     <FilterChips
                         options={statusOptions}
                         value={status}
-                        onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v, role }, { preserveState: true }); }}
+                        onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v, role }, { preserveState: true, preserveScroll: true, replace: true }); }}
                     />
                     <FilterChips
                         options={[{ value: '', label: 'Semua Role' }, ...roleOptions]}
                         value={role}
-                        onChange={(v) => { setRole(v as string); router.get(base, { search, status, role: v }, { preserveState: true }); }}
+                        onChange={(v) => { setRole(v as string); router.get(base, { search, status, role: v }, { preserveState: true, preserveScroll: true, replace: true }); }}
                     />
                 </div>
             </div>

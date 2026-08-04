@@ -31,7 +31,7 @@ export default function Index() {
     const [search, setSearch] = useState(filters?.search ?? '');
     const base = '/dashboard/pimpinan/pengembalian';
 
-    const apply = (params: Record<string, string>) => router.get(base, params, { preserveState: true, preserveScroll: true });
+    const apply = (params: Record<string, string>) => router.get(base, params, { preserveState: true, preserveScroll: true, replace: true });
 
     const columns = [
         { header: 'Kode', accessor: 'kode' as keyof Peminjaman },
@@ -83,7 +83,7 @@ export default function Index() {
                     <SearchInput
                         value={search}
                         onChange={(v) => setSearch(v)}
-                        onSearch={() => apply({ search })}
+                        onSearch={(val) => apply({ search: val })}
                         placeholder="Cari kode"
                         className="flex-1"
                     />

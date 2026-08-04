@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { FlaskConical, Grid3X3, Home, List, Search, SearchX } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Badge } from '../../Components/Badge';
 import { Button } from '../../Components/Button';
 import { CardWithBackground } from '../../Components/CardWithBackground';
@@ -49,7 +49,8 @@ export default function Laboratorium({ laboratorium, filters, statusOptions, lok
 
     const applyFilters = (payload: Record<string, string> = {}) => {
         const params: Record<string, string> = {};
-        if (search) params.search = search;
+        const nextSearch = payload.search !== undefined ? payload.search : search;
+        if (nextSearch) params.search = nextSearch;
         if (status || payload.status !== undefined) {
             const next = payload.status !== undefined ? payload.status : status;
             if (next) params.status = next;
@@ -62,19 +63,13 @@ export default function Laboratorium({ laboratorium, filters, statusOptions, lok
             const next = payload.kapasitas !== undefined ? payload.kapasitas : kapasitas;
             if (next) params.kapasitas = next;
         }
-        router.get('/laboratorium', params, { preserveState: true, preserveScroll: true });
+        router.get('/laboratorium', params, { preserveState: true, preserveScroll: true, replace: true });
     };
 
-    const didMount = useRef(false);
-    useEffect(() => {
-        if (!didMount.current) { didMount.current = true; return; }
-        const t = setTimeout(() => applyFilters({}), 400);
-        return () => clearTimeout(t);
-    }, [search]);
 
     const reset = () => {
         setSearch(''); setStatus(''); setLokasi(''); setKapasitas('');
-        router.get('/laboratorium', {}, { preserveState: true, preserveScroll: true });
+        router.get('/laboratorium', {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const photoUrl = (path: string | null) => (path ? `/storage/${path}` : null);
@@ -99,7 +94,7 @@ export default function Laboratorium({ laboratorium, filters, statusOptions, lok
                     <SearchInput
                         value={search}
                         onChange={(v) => setSearch(v)}
-                        onSearch={() => applyFilters()}
+                        onSearch={(val) => applyFilters({ search: val })}
                         placeholder="Cari laboratorium..."
                         className="flex-1"
                     />

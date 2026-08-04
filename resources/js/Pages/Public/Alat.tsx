@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { FlaskConical, Grid3X3, Home, List, Search, SearchX } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Badge } from '../../Components/Badge';
 import { Button } from '../../Components/Button';
 import { CardWithBackground } from '../../Components/CardWithBackground';
@@ -76,19 +76,13 @@ export default function Alat({ alat, filters, laboratoriumOptions, kategoriOptio
         if (nextKondisi) params.kondisi = nextKondisi;
         if (nextSort && nextSort !== 'terbaru') params.sort = nextSort;
 
-        router.get('/alat', params, { preserveState: true, preserveScroll: true });
+        router.get('/alat', params, { preserveState: true, preserveScroll: true, replace: true });
     };
 
-    const didMount = useRef(false);
-    useEffect(() => {
-        if (!didMount.current) { didMount.current = true; return; }
-        const t = setTimeout(() => applyFilters({}), 400);
-        return () => clearTimeout(t);
-    }, [search]);
 
     const reset = () => {
         setSearch(''); setLabFilter(''); setKategoriFilter(''); setStatusFilter(''); setKondisiFilter(''); setSort('terbaru');
-        router.get('/alat', {}, { preserveState: true, preserveScroll: true });
+        router.get('/alat', {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const photoUrl = (path: string | null) => (path ? `/storage/${path}` : null);
@@ -113,7 +107,7 @@ export default function Alat({ alat, filters, laboratoriumOptions, kategoriOptio
                     <SearchInput
                         value={search}
                         onChange={(v) => setSearch(v)}
-                        onSearch={() => applyFilters()}
+                        onSearch={(val) => applyFilters({ search: val })}
                         placeholder="Cari alat..."
                         className="flex-1"
                     />

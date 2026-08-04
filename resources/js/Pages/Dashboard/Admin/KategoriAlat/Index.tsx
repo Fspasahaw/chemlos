@@ -31,7 +31,7 @@ export default function Index() {
     const [status, setStatus] = useState(filters?.status ?? '');
     const base = '/dashboard/admin/kategori-alat';
 
-    const cari = () => router.get(base, { search, status }, { preserveState: true });
+    const cari = (term?: string) => router.get(base, { search: term ?? search, status }, { preserveState: true, preserveScroll: true, replace: true });
 
     const columns = [
         { header: 'Nama', accessor: 'nama' as keyof Kategori },
@@ -87,7 +87,7 @@ export default function Index() {
                     />
                     <Button onClick={cari} size="md">Cari</Button>
                 </div>
-                <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v }, { preserveState: true }); }} />
+                <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v }, { preserveState: true, preserveScroll: true, replace: true }); }} />
             </div>
 
             <DataTable isLoading={loading} columns={columns} data={items.data as Kategori[]} keyExtractor={(row) => row.id} emptyText="Tidak ada data kategori alat." />

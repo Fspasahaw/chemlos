@@ -45,7 +45,7 @@ export default function Verifikasi() {
     const [rejectReason, setRejectReason] = useState('');
     const base = '/dashboard/admin/users';
 
-    const cari = () => router.get('/dashboard/admin/verifikasi-akun', { search }, { preserveState: true });
+    const cari = (term?: string) => router.get('/dashboard/admin/verifikasi-akun', { search: term ?? search }, { preserveState: true, preserveScroll: true, replace: true });
 
     const action = (url: string, userId: number, payload: Record<string, any> = {}) => {
         setLoadingId(userId);

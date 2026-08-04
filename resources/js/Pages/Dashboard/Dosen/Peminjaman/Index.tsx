@@ -40,7 +40,7 @@ export default function Index() {
 
     useEffect(() => {
         const t = setTimeout(() => {
-            router.get('/dashboard/dosen/peminjaman', { search, status }, { preserveState: true, preserveScroll: true });
+            router.get('/dashboard/dosen/peminjaman', { search, status }, { preserveState: true, preserveScroll: true, replace: true });
         }, 400);
         return () => clearTimeout(t);
     }, [search, status]);

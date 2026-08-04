@@ -5,7 +5,6 @@ import {
     Calendar as CalendarIcon,
     CalendarDays,
     Clock,
-    Download,
     FileText,
     FlaskConical,
     Image,
@@ -22,7 +21,9 @@ import { Button } from './Button';
 import { Calendar, CalendarEvent } from './Calendar';
 import { Card } from './Card';
 import { CardWithBackground } from './CardWithBackground';
+import { DocumentPreview } from './DocumentPreview';
 import { ImageWithFallback } from './ImageWithFallback';
+import { Lightbox } from './Lightbox';
 import { formatDate } from '../lib/date';
 import { alatStatusMap, dokumenJenisMap, kondisiAlatMap, peranLabelMap, statusKerusakanMap, statusMaintenanceMap, statusPeminjamanMap } from '../lib/status';
 
@@ -111,9 +112,12 @@ export default function LaboratoriumShow({ base, editHref }: LaboratoriumShowPro
     };
     const [activeTab, setActiveTab] = useState<'tentang' | 'alat' | 'galeri' | 'dokumen' | 'tata-tertib' | 'jadwal-riwayat'>('tentang');
     const [selectedKategori, setSelectedKategori] = useState<string>('');
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const [selectedDoc, setSelectedDoc] = useState<DokumenItem | null>(null);
 
     const lab = item;
     const galeri = (lab as any).laboratoriumGaleris ?? (lab as any).laboratorium_galeris ?? lab.galeri ?? [];
+    const galleryImages = galeri.map((g) => ({ src: `/storage/${g.file}`, alt: g.judul }));
     const dokumen = (lab as any).laboratoriumDokumens ?? (lab as any).laboratorium_dokumens ?? lab.dokumen ?? [];
     const tataTertibs = (lab as any).laboratoriumTataTertibs ?? (lab as any).laboratorium_tata_tertibs ?? [];
     const pengelola = (lab as any).laboratoriumPengelolas ?? (lab as any).laboratorium_pengelolas ?? lab.pengelola ?? [];
@@ -149,28 +153,6 @@ export default function LaboratoriumShow({ base, editHref }: LaboratoriumShowPro
         }
     };
 
-    const historyIcon = (type: string) => {
-        switch (type) {
-            case 'peminjaman':
-                return (
-                    <span className="rounded-full bg-indigo-100 p-2 text-indigo-600 dark:bg-indigo-900/20">
-                        <CalendarIcon className="h-4 w-4" />
-                    </span>
-                );
-            case 'kerusakan':
-                return (
-                    <span className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-900/20">
-                        <Wrench className="h-4 w-4" />
-                    </span>
-                );
-            default:
-                return (
-                    <span className="rounded-full bg-amber-100 p-2 text-amber-600 dark:bg-amber-900/20">
-                        <Wrench className="h-4 w-4" />
-                    </span>
-                );
-        }
-    };
 
     return (
         <>
@@ -319,20 +301,19 @@ export default function LaboratoriumShow({ base, editHref }: LaboratoriumShowPro
                                         <p className="text-center text-slate-500 dark:text-slate-400">Belum ada galeri.</p>
                                     ) : (
                                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                            {galeri.map((g) => (
-                                                <a
+                                            {galeri.map((g, idx) => (
+                                                <button
                                                     key={g.id}
-                                                    href={`/storage/${g.file}`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80"
+                                                    type="button"
+                                                    onClick={() => setLightboxIndex(idx)}
+                                                    className="overflow-hidden rounded-2xl border border-slate-200/80 text-left dark:border-slate-800/80"
                                                 >
                                                     <ImageWithFallback
                                                         src={`/storage/${g.file}`}
                                                         alt={g.judul}
                                                         className="h-56 w-full object-cover transition hover:scale-105"
                                                     />
-                                                </a>
+                                                </button>
                                             ))}
                                         </div>
                                     )}
@@ -345,12 +326,11 @@ export default function LaboratoriumShow({ base, editHref }: LaboratoriumShowPro
                                         <p className="text-center text-slate-500 dark:text-slate-400">Belum ada dokumen.</p>
                                     ) : (
                                         regulerDocs.map((d) => (
-                                            <a
+                                            <button
                                                 key={d.id}
-                                                href={`/storage/${d.file}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 transition hover:bg-slate-50 dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800"
+                                                type="button"
+                                                onClick={() => setSelectedDoc(d)}
+                                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 text-left transition hover:bg-slate-50 dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800"
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <FileText className="h-5 w-5 text-indigo-600" />
@@ -359,8 +339,8 @@ export default function LaboratoriumShow({ base, editHref }: LaboratoriumShowPro
                                                         {dokumenJenisMap[d.jenis] ?? d.jenis}
                                                     </span>
                                                 </div>
-                                                <Download className="h-4 w-4 text-slate-400" />
-                                            </a>
+                                                <span className="text-sm text-indigo-600">Lihat</span>
+                                            </button>
                                         ))
                                     )}
                                 </div>
@@ -429,18 +409,30 @@ export default function LaboratoriumShow({ base, editHref }: LaboratoriumShowPro
                                             return historyItems.length === 0 ? (
                                                 <p className="text-slate-500 dark:text-slate-400">Belum ada riwayat.</p>
                                             ) : (
-                                                <div className="relative space-y-6 border-l-2 border-slate-200 pl-6 dark:border-slate-700">
-                                                    {historyItems.map((h, idx) => (
-                                                        <div key={idx} className="relative">
-                                                            <span className="absolute -left-7.75 top-0">{historyIcon(h.type)}</span>
-                                                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{h.title}</p>
-                                                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                                {formatDate(h.date)}
-                                                                {h.end ? ` - ${formatDate(h.end)}` : ''} &bull; {h.status}
-                                                            </p>
-                                                            {h.description && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{h.description}</p>}
-                                                        </div>
-                                                    ))}
+                                                <div className="relative pl-12">
+                                                    <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
+                                                    {historyItems.map((h, idx) => {
+                                                        const Icon = h.type === 'peminjaman' ? CalendarIcon : h.type === 'kerusakan' ? Wrench : Wrench;
+                                                        const iconClass =
+                                                            h.type === 'peminjaman'
+                                                                ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300'
+                                                                : h.type === 'kerusakan'
+                                                                  ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-300'
+                                                                  : 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-300';
+                                                        return (
+                                                            <div key={idx} className="relative mb-8 last:mb-0">
+                                                                <span className={`absolute -left-12 top-0 flex h-10 w-10 items-center justify-center rounded-full ${iconClass}`}>
+                                                                    <Icon className="h-5 w-5" />
+                                                                </span>
+                                                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{h.title}</p>
+                                                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                                    {formatDate(h.date)}
+                                                                    {h.end ? ` - ${formatDate(h.end)}` : ''} &bull; {h.status}
+                                                                </p>
+                                                                {h.description && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{h.description}</p>}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             );
                                         })()}
@@ -449,6 +441,24 @@ export default function LaboratoriumShow({ base, editHref }: LaboratoriumShowPro
                             )}
                         </div>
                     </Card>
+
+                    {lightboxIndex !== null && (
+                        <Lightbox
+                            images={galleryImages}
+                            initialIndex={lightboxIndex}
+                            open={lightboxIndex !== null}
+                            onClose={() => setLightboxIndex(null)}
+                        />
+                    )}
+
+                    {selectedDoc && (
+                        <DocumentPreview
+                            file={selectedDoc.file}
+                            title={selectedDoc.judul}
+                            open={!!selectedDoc}
+                            onClose={() => setSelectedDoc(null)}
+                        />
+                    )}
                 </div>
 
                 <aside>

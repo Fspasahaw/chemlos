@@ -1,15 +1,32 @@
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+
+export function parseLocalDate(value: string | Date | null | undefined): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2}))?/);
+    if (m) {
+        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), m[4] ? Number(m[4]) : 0, m[5] ? Number(m[5]) : 0, m[6] ? Number(m[6]) : 0);
+    }
+    try {
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? null : d;
+    } catch {
+        return null;
+    }
+}
+
+export function toDateInput(value: string | null | undefined): string {
+    if (!value) return '';
+    const m = String(value).match(/^\d{4}-\d{2}-\d{2}/);
+    return m ? m[0] : '';
+}
 
 export function formatDate(value: string | Date | null | undefined, fmt = 'dd MMMM yyyy'): string {
     if (!value) return '-';
-    try {
-        const date = typeof value === 'string' ? parseISO(value) : value;
-        if (Number.isNaN(date.getTime())) return '-';
-        return format(date, fmt, { locale: id });
-    } catch {
-        return '-';
-    }
+    const date = typeof value === 'string' ? parseLocalDate(value) : value;
+    if (!date || Number.isNaN(date.getTime())) return '-';
+    return format(date, fmt, { locale: id });
 }
 
 export function formatDateTime(value: string | Date | null | undefined, fmt = 'dd MMMM yyyy HH:mm'): string {

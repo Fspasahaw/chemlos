@@ -15,6 +15,7 @@ import { Textarea } from '@/Components/Textarea';
 import { useLang } from '@/Providers/LanguageProvider';
 import { statusVerifikasiMap } from '@/lib/status';
 import { useTheme } from '@/Providers/ThemeProvider';
+import { toDateInput } from '@/lib/date';
 import PasswordIndicator from '@/Components/PasswordIndicator';
 
 export default function ProfileIndex() {
@@ -24,11 +25,6 @@ export default function ProfileIndex() {
     const user = auth?.user;
     const isMahasiswa = user?.roles?.some((r: any) => r.name === 'mahasiswa');
 
-    const toDateInput = (value?: string) => {
-        if (!value) return '';
-        const d = new Date(value);
-        return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
-    };
 
     const [tab, setTab] = useState<'pribadi' | 'keamanan' | 'preferensi'>('pribadi');
 

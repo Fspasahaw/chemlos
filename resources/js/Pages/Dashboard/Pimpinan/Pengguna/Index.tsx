@@ -53,7 +53,7 @@ export default function Index() {
     const [role, setRole] = useState(filters?.role ?? '');
     const base = '/dashboard/pimpinan/pengguna';
 
-    const cari = () => router.get(base, { search, status, role }, { preserveState: true });
+    const cari = (term?: string) => router.get(base, { search: term ?? search, status, role }, { preserveState: true, preserveScroll: true, replace: true });
 
     const roleOptions = [{ value: '', label: 'Semua Peran' }, ...roles.map((r: string) => ({ value: r, label: r }))];
 
