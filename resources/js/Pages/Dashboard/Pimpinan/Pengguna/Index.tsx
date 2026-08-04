@@ -1,12 +1,12 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Eye, Search } from 'lucide-react';
-import { useState } from 'react';
+import { Eye } from 'lucide-react';
+import { useFilter } from '@/Hooks/useFilter';
 import { usePageLoading } from '../../../../Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { DataTable } from '@/Components/DataTable';
-import { Input } from '@/Components/Input';
 import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
 import { Select } from '@/Components/Select';
 import { formatDate } from '@/lib/date';
 
@@ -46,14 +46,10 @@ const statusLabelMap: Record<string, string> = {
 };
 
 export default function Index() {
-    const { items, filters, roles } = usePage().props as any;
+    const { items, roles } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
-    const [role, setRole] = useState(filters?.role ?? '');
     const base = '/dashboard/pimpinan/pengguna';
-
-    const cari = (term?: string) => router.get(base, { search: term ?? search, status, role }, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter(base);
 
     const roleOptions = [{ value: '', label: 'Semua Peran' }, ...roles.map((r: string) => ({ value: r, label: r }))];
 
@@ -87,16 +83,15 @@ export default function Index() {
 
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
-                    <Input
+                    <SearchInput
                         placeholder="Cari nama, email, NPM/NIP..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && cari()}
+                        value={filters?.search ?? ''}
+                        onSearch={(v) => apply({ search: v })}
                         className="max-w-sm"
                     />
-                    <Select options={statusOptions} value={status} onChange={(e) => { setStatus(e.target.value); cari(); }} className="max-w-xs" />
-                    <Select options={roleOptions} value={role} onChange={(e) => { setRole(e.target.value); cari(); }} className="max-w-xs" />
-                    <Button onClick={cari} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
+                    <Select options={statusOptions} value={filters?.status ?? ''} onChange={(e) => apply({ status: e.target.value })} className="max-w-xs" />
+                    <Select options={roleOptions} value={filters?.role ?? ''} onChange={(e) => apply({ role: e.target.value })} className="max-w-xs" />
+                    <Button onClick={() => apply({})}>Cari</Button>
                 </div>
             </div>
 

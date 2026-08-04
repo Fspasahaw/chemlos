@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { DataTable } from '@/Components/DataTable';
@@ -35,14 +35,10 @@ const statusOptions = [
 ];
 
 export default function Index() {
-    const { items, filters } = usePage().props as any;
+    const { items } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [jenjang, setJenjang] = useState(filters?.jenjang ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
     const base = '/dashboard/admin/program-studi';
-
-    const cari = (term?: string) => router.get(base, { search: term ?? search, jenjang, status }, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter(base);
 
     const columns = [
         { header: 'Nama', accessor: 'nama' as keyof ProgramStudi },
@@ -90,17 +86,16 @@ export default function Index() {
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <SearchInput
-                        value={search}
-                        onSearch={(v) => { setSearch(v); cari(v); }}
-                        onChange={(v) => setSearch(v)}
+                        value={filters?.search ?? ''}
+                        onSearch={(v) => apply({ search: v })}
                         placeholder="Cari program studi..."
                         className="max-w-sm"
                     />
-                    <Button onClick={cari} size="md" leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
+                    <Button onClick={() => apply({})} size="md" leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <FilterChips options={jenjangOptions} value={jenjang} onChange={(v) => { setJenjang(v as string); router.get(base, { search, jenjang: v, status }, { preserveState: true, preserveScroll: true, replace: true }); }} />
-                    <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, jenjang, status: v }, { preserveState: true, preserveScroll: true, replace: true }); }} />
+                    <FilterChips options={jenjangOptions} value={filters?.jenjang ?? ''} onChange={(v) => apply({ jenjang: v as string })} />
+                    <FilterChips options={statusOptions} value={filters?.status ?? ''} onChange={(v) => apply({ status: v as string })} />
                 </div>
             </div>
 

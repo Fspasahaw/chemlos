@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Eye, FileText, Plus, QrCode, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useFilter } from '@/Hooks/useFilter';
 import { Button } from '../../../../Components/Button';
 import { Card } from '../../../../Components/Card';
 import { Pagination } from '../../../../Components/Pagination';
@@ -10,11 +10,9 @@ import { EmptyTable } from '../../../../Components/EmptyTable';
 import { alatStatusMap } from '../../../../lib/status';
 
 export default function Index() {
-    const { items, filters, kategoris, base = '/dashboard/laboran/alat', features } = usePage().props as any;
+    const { items, kategoris, base = '/dashboard/laboran/alat', features } = usePage().props as any;
     const isEnabled = (key: string) => !!features?.[key];
-    const [search, setSearch] = useState(filters?.search ?? '');
-
-    const apply = (params: Record<string, string>) => router.get(base, params, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter(base);
 
     return (
         <>
@@ -29,8 +27,7 @@ export default function Index() {
             <Card>
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row">
                     <SearchInput
-                        value={search}
-                        onChange={(v) => setSearch(v)}
+                        value={filters?.search ?? ''}
                         onSearch={(val) => apply({ search: val })}
                         placeholder="Cari nama/kode"
                         className="flex-1"
@@ -38,10 +35,10 @@ export default function Index() {
                     <Select
                         options={[{ value: '', label: 'Semua Kategori' }, ...Object.entries(kategoris ?? {}).map(([id, nama]) => ({ value: id, label: String(nama) }))]}
                         value={filters?.kategori ?? ''}
-                        onChange={(e) => apply({ kategori: e.target.value, search })}
+                        onChange={(e) => apply({ kategori: e.target.value })}
                         className="w-48"
                     />
-                    <Button onClick={() => apply({ search })} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
+                    <Button onClick={() => apply({})} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
                 </div>
                 <div className="overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800/80">
                     <table className="w-full text-sm">

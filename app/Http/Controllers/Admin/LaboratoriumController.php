@@ -172,6 +172,11 @@ class LaboratoriumController extends Controller
                 Storage::disk('public')->delete($laboratorium->foto_utama);
             }
             $data['foto_utama'] = $request->file('foto_utama')->store('laboratorium', 'public');
+        } elseif ($request->boolean('remove_foto_utama')) {
+            if ($laboratorium->foto_utama) {
+                Storage::disk('public')->delete($laboratorium->foto_utama);
+            }
+            $data['foto_utama'] = null;
         } else {
             unset($data['foto_utama']);
         }

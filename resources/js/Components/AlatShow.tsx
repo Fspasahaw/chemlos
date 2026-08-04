@@ -19,7 +19,9 @@ import { Badge } from './Badge';
 import { Button } from './Button';
 import { Calendar, CalendarEvent } from './Calendar';
 import { Card } from './Card';
+import { DocumentPreview } from './DocumentPreview';
 import { ImageWithFallback } from './ImageWithFallback';
+import { Lightbox } from './Lightbox';
 import Modal from './Modal';
 import { formatDate } from '../lib/date';
 import { alatStatusMap, dokumenJenisMap, kondisiAlatMap, statusKerusakanMap, statusMaintenanceMap, statusPeminjamanMap } from '../lib/status';
@@ -103,9 +105,15 @@ export default function AlatShow({ base, editHref }: AlatShowProps) {
     const isEnabled = (key: string) => !!features?.[key];
     const [activeTab, setActiveTab] = useState<'info' | 'spesifikasi' | 'galeri' | 'dokumen' | 'video' | 'qr' | 'riwayat' | 'jadwal'>('info');
     const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
+    const [selectedDoc, setSelectedDoc] = useState<DokumenItem | null>(null);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
     const alat = item;
     const galeri = (alat as any).alatGaleris ?? (alat as any).alat_galeris ?? alat.galeri ?? [];
+    const allGallery = [
+        ...(alat.foto_utama ? [{ src: `/storage/${alat.foto_utama}`, alt: alat.nama }] : []),
+        ...galeri.map((g: any) => ({ src: `/storage/${g.file}`, alt: g.judul })),
+    ];
     const dokumen = (alat as any).alatDokumens ?? (alat as any).alat_dokumens ?? alat.dokumen ?? [];
     const videos = (alat as any).videoTutorials ?? (alat as any).video_tutorials ?? [];
 
@@ -254,24 +262,23 @@ export default function AlatShow({ base, editHref }: AlatShowProps) {
 
                             {activeTab === 'galeri' && (
                                 <div>
-                                    {galeri.length === 0 ? (
+                                    {allGallery.length === 0 ? (
                                         <p className="text-center text-slate-500 dark:text-slate-400">Tidak ada galeri.</p>
                                     ) : (
                                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                            {galeri.map((g) => (
-                                                <a
-                                                    key={g.id}
-                                                    href={`/storage/${g.file}`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80"
+                                            {allGallery.map((g, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => setLightboxIndex(idx)}
+                                                    className="overflow-hidden rounded-2xl border border-slate-200/80 text-left dark:border-slate-800/80"
                                                 >
                                                     <ImageWithFallback
-                                                        src={`/storage/${g.file}`}
-                                                        alt={g.judul}
+                                                        src={g.src}
+                                                        alt={g.alt}
                                                         className="h-56 w-full object-cover transition hover:scale-105"
                                                     />
-                                                </a>
+                                                </button>
                                             ))}
                                         </div>
                                     )}
@@ -284,12 +291,11 @@ export default function AlatShow({ base, editHref }: AlatShowProps) {
                                         <p className="text-center text-slate-500 dark:text-slate-400">Tidak ada dokumen.</p>
                                     ) : (
                                         dokumen.map((d) => (
-                                            <a
+                                            <button
                                                 key={d.id}
-                                                href={`/storage/${d.file}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 transition hover:bg-slate-50 dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800"
+                                                type="button"
+                                                onClick={() => setSelectedDoc(d)}
+                                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-4 text-left transition hover:bg-slate-50 dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800"
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <FileText className="h-5 w-5 text-indigo-600" />
@@ -299,7 +305,7 @@ export default function AlatShow({ base, editHref }: AlatShowProps) {
                                                     </span>
                                                 </div>
                                                 <Download className="h-4 w-4 text-slate-400" />
-                                            </a>
+                                            </button>
                                         ))
                                     )}
                                 </div>
@@ -459,6 +465,24 @@ export default function AlatShow({ base, editHref }: AlatShowProps) {
                     )}
                 </div>
             </Modal>
+
+            {selectedDoc && (
+                <DocumentPreview
+                    file={selectedDoc.file}
+                    title={selectedDoc.judul}
+                    open
+                    onClose={() => setSelectedDoc(null)}
+                />
+            )}
+
+            {lightboxIndex !== null && (
+                <Lightbox
+                    images={allGallery}
+                    initialIndex={lightboxIndex}
+                    open={lightboxIndex !== null}
+                    onClose={() => setLightboxIndex(null)}
+                />
+            )}
         </>
     );
 }

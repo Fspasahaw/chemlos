@@ -1,13 +1,13 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { DataTable } from '@/Components/DataTable';
-import { FilterChips } from '@/Components/FilterChips';
-import { Input } from '@/Components/Input';
 import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
+import { Select } from '@/Components/Select';
 import { TableActions } from '@/Components/TableActions';
 
 interface Kategori {
@@ -25,13 +25,10 @@ const statusOptions = [
 ];
 
 export default function Index() {
-    const { items, filters } = usePage().props as any;
+    const { items } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
     const base = '/dashboard/admin/kategori-alat';
-
-    const cari = (term?: string) => router.get(base, { search: term ?? search, status }, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter(base);
 
     const columns = [
         { header: 'Nama', accessor: 'nama' as keyof Kategori },
@@ -75,19 +72,22 @@ export default function Index() {
                 </Link>
             </div>
 
-            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <Input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && cari()}
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
+                    <SearchInput
+                        value={filters?.search ?? ''}
+                        onSearch={(v) => apply({ search: v })}
                         placeholder="Cari kategori alat..."
-                        leftIcon={<Search className="h-4 w-4" />}
                         className="max-w-sm"
                     />
-                    <Button onClick={cari} size="md">Cari</Button>
+                    <Select
+                        options={statusOptions}
+                        value={filters?.status ?? ''}
+                        onChange={(e) => apply({ status: e.target.value })}
+                        className="max-w-xs"
+                    />
+                    <Button onClick={() => apply({})} size="md" leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
                 </div>
-                <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v }, { preserveState: true, preserveScroll: true, replace: true }); }} />
             </div>
 
             <DataTable isLoading={loading} columns={columns} data={items.data as Kategori[]} keyExtractor={(row) => row.id} emptyText="Tidak ada data kategori alat." />

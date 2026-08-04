@@ -4,12 +4,31 @@ import { id } from 'date-fns/locale';
 export function parseLocalDate(value: string | Date | null | undefined): Date | null {
     if (!value) return null;
     if (value instanceof Date) return value;
-    const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2}))?/);
-    if (m) {
-        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), m[4] ? Number(m[4]) : 0, m[5] ? Number(m[5]) : 0, m[6] ? Number(m[6]) : 0);
+
+    const s = String(value).trim();
+
+    // Date-only YYYY-MM-DD → treat as local midnight
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        const [y, m, d] = s.split('-').map(Number);
+        return new Date(y, m - 1, d, 0, 0, 0);
     }
+
+    // YYYY-MM-DD HH:MM:SS (space separator, common Laravel output) → local time
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(s)) {
+        const [date, time] = s.split(' ');
+        const [y, m, d] = date.split('-').map(Number);
+        const [hh, mm, ss] = time.split(':').map(Number);
+        return new Date(y, m - 1, d, hh, mm, ss);
+    }
+
+    // ISO string with time/timezone (YYYY-MM-DDTHH:MM:SS or with Z/offset)
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(s) || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[Z+-]/.test(s)) {
+        const d = new Date(s);
+        return Number.isNaN(d.getTime()) ? null : d;
+    }
+
     try {
-        const d = new Date(value);
+        const d = new Date(s);
         return Number.isNaN(d.getTime()) ? null : d;
     } catch {
         return null;
@@ -18,8 +37,12 @@ export function parseLocalDate(value: string | Date | null | undefined): Date | 
 
 export function toDateInput(value: string | null | undefined): string {
     if (!value) return '';
-    const m = String(value).match(/^\d{4}-\d{2}-\d{2}/);
-    return m ? m[0] : '';
+    const d = parseLocalDate(value);
+    if (!d || Number.isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
 }
 
 export function formatDate(value: string | Date | null | undefined, fmt = 'dd MMMM yyyy'): string {

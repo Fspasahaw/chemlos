@@ -1,13 +1,13 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Eye, Pencil, Play, Plus, Search, Trash2, Video } from 'lucide-react';
-import { useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
+import { Eye, Pencil, Play, Plus, Trash2, Video } from 'lucide-react';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { DataTable } from '@/Components/DataTable';
 import { FilterChips } from '@/Components/FilterChips';
-import { Input } from '@/Components/Input';
 import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
 
 import { formatDuration } from '@/lib/date';
 import { videoJenisMap } from '@/lib/status';
@@ -47,16 +47,10 @@ const sumberOptions = [
 ];
 
 export default function Index() {
-    const { items, filters, alatOptions } = usePage().props as any;
+    const { items, alatOptions } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [jenis, setJenis] = useState(filters?.jenis ?? '');
-    const [alat, setAlat] = useState(filters?.alat ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
-    const [sumber, setSumber] = useState(filters?.sumber ?? '');
     const base = '/dashboard/admin/video-tutorial';
-
-    const cari = (term?: string) => router.get(base, { search: term ?? search, jenis, alat, status, sumber }, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter(base);
 
     const alatFilterOptions = [{ value: '', label: 'Semua Alat' }, ...alatOptions.map((a: any) => ({ value: String(a.id), label: a.nama }))];
 
@@ -121,14 +115,14 @@ export default function Index() {
 
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <Input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && cari()} placeholder="Cari judul..." leftIcon={<Search className="h-4 w-4" />} className="max-w-sm" />
-                    <Button onClick={cari} size="md">Cari</Button>
+                    <SearchInput value={filters?.search ?? ''} onSearch={(v) => apply({ search: v })} placeholder="Cari judul..." className="max-w-sm" />
+                    <Button onClick={() => apply({})} size="md">Cari</Button>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                    <FilterChips options={jenisOptions} value={jenis} onChange={(v) => { setJenis(v as string); router.get(base, { search, jenis: v, alat, status, sumber }, { preserveState: true, preserveScroll: true, replace: true }); }} />
-                    <SelectSearch options={alatFilterOptions} value={alat} onChange={(v) => { setAlat(v); router.get(base, { search, jenis, alat: v, status, sumber }, { preserveState: true, preserveScroll: true, replace: true }); }} placeholder="Filter alat" className="w-48" />
-                    <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, jenis, alat, status: v, sumber }, { preserveState: true, preserveScroll: true, replace: true }); }} />
-                    <FilterChips options={sumberOptions} value={sumber} onChange={(v) => { setSumber(v as string); router.get(base, { search, jenis, alat, status, sumber: v }, { preserveState: true, preserveScroll: true, replace: true }); }} />
+                    <FilterChips options={jenisOptions} value={filters?.jenis ?? ''} onChange={(v) => apply({ jenis: v as string })} />
+                    <SelectSearch options={alatFilterOptions} value={filters?.alat ?? ''} onChange={(v) => apply({ alat: v })} placeholder="Filter alat" className="w-48" />
+                    <FilterChips options={statusOptions} value={filters?.status ?? ''} onChange={(v) => apply({ status: v as string })} />
+                    <FilterChips options={sumberOptions} value={filters?.sumber ?? ''} onChange={(v) => apply({ sumber: v as string })} />
                 </div>
             </div>
 

@@ -5,6 +5,7 @@ import { Button } from '@/Components/Button';
 import { Calendar } from '@/Components/Calendar';
 import { ConfirmActionButton } from '@/Components/ConfirmActionButton';
 import { ConfirmDeleteButton } from '@/Components/ConfirmDeleteButton';
+import { DocumentPreview } from '@/Components/DocumentPreview';
 import { EmptyState } from '@/Components/EmptyState';
 import { FileUpload } from '@/Components/FileUpload';
 import { ImageWithFallback } from '@/Components/ImageWithFallback';
@@ -54,11 +55,13 @@ export default function AlatEdit({ base }: AlatEditProps) {
         kategori_id: String(item.kategori_id ?? ''), deskripsi: item.deskripsi ?? '', kondisi: item.kondisi ?? 'baik',
         stok_total: String(item.stok_total ?? ''), persyaratan_khusus: item.persyaratan_khusus ?? '',
         pelatihan_wajib: !!item.pelatihan_wajib,
-        foto_utama: null as File | null,
+        foto_utama: item.foto_utama as File | string | null,
+        remove_foto_utama: false,
         spesifikasi: (item.spesifikasi as Record<string, string>) ?? {},
     });
 
     const [tab, setTab] = useState('profil');
+    const [selectedDoc, setSelectedDoc] = useState<{ id: number; file: string; judul: string; jenis: string } | null>(null);
     const [specKey, setSpecKey] = useState('');
     const [specValue, setSpecValue] = useState('');
 
@@ -84,18 +87,32 @@ export default function AlatEdit({ base }: AlatEditProps) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        transform((formData) => ({ ...formData, _method: 'PUT' }));
+        transform((formData) => ({ ...formData, _method: 'PUT', remove_foto_utama: data.remove_foto_utama ? '1' : '0' }));
         postMain(`${base}/${item.id}`, { forceFormData: true });
     };
 
     const submitGaleri = (e: React.FormEvent) => {
         e.preventDefault();
-        postGal(`${base}/${item.id}/galeri`, { forceFormData: galData.file !== null });
+        postGal(`${base}/${item.id}/galeri`, {
+            forceFormData: galData.file !== null,
+            preserveScroll: true,
+            onSuccess: () => {
+                setGalData({ file: null, judul: '' });
+                router.reload({ only: ['item'], preserveScroll: true });
+            },
+        });
     };
 
     const submitDokumen = (e: React.FormEvent) => {
         e.preventDefault();
-        postDok(`${base}/${item.id}/dokumen`, { forceFormData: dokData.file !== null });
+        postDok(`${base}/${item.id}/dokumen`, {
+            forceFormData: dokData.file !== null,
+            preserveScroll: true,
+            onSuccess: () => {
+                setDokData({ file: null, judul: '', jenis: 'manual' });
+                router.reload({ only: ['item'], preserveScroll: true });
+            },
+        });
     };
 
     const submitVideo = (e: React.FormEvent) => {
@@ -176,7 +193,15 @@ export default function AlatEdit({ base }: AlatEditProps) {
                             <NumberStepper min={0} label="Stok Total *" value={Number(data.stok_total) || 0} onChange={(v) => setData('stok_total', String(v))} error={errors.stok_total} />
                         </div>
                         <Textarea label="Deskripsi" value={data.deskripsi} onChange={(e) => setData('deskripsi', e.target.value)} rows={3} error={errors.deskripsi} />
-                        <FileUpload label="Foto Utama" value={data.foto_utama ?? item.foto_utama} onChange={(file) => setData('foto_utama', file)} error={errors.foto_utama} />
+                        <FileUpload
+                            label="Foto Utama"
+                            value={data.foto_utama}
+                            onChange={(file) => {
+                                setData('foto_utama', file);
+                                setData('remove_foto_utama', file === null && !!item.foto_utama);
+                            }}
+                            error={errors.foto_utama}
+                        />
                         <Switch checked={data.pelatihan_wajib} onChange={(v) => setData('pelatihan_wajib', v)} label="Wajib Pelatihan" />
                         <Textarea label="Persyaratan Khusus" value={data.persyaratan_khusus} onChange={(e) => setData('persyaratan_khusus', e.target.value)} rows={2} error={errors.persyaratan_khusus} />
                         <div className="flex justify-end">
@@ -207,10 +232,14 @@ export default function AlatEdit({ base }: AlatEditProps) {
 
                 {tab === 'galeri' && (
                     <div className="space-y-4">
-                        <form onSubmit={submitGaleri} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                            <FileUpload label="Tambah Foto" value={galData.file} onChange={(file) => setGalData('file', file)} error={galErrors.file} className="flex-1" />
-                            <Input label="Judul" value={galData.judul} onChange={(e) => setGalData('judul', e.target.value)} error={galErrors.judul} />
-                            <Button type="submit" isLoading={galProcessing} leftIcon={<Upload className="h-4 w-4" />}>Tambah</Button>
+                        <form onSubmit={submitGaleri} className="space-y-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-900/50">
+                            <FileUpload label="Tambah Foto" value={galData.file} onChange={(file) => setGalData('file', file)} error={galErrors.file} />
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <Input label="Judul" value={galData.judul} onChange={(e) => setGalData('judul', e.target.value)} error={galErrors.judul} />
+                                <div className="flex items-end">
+                                    <Button type="submit" isLoading={galProcessing} leftIcon={<Upload className="h-4 w-4" />}>Tambah</Button>
+                                </div>
+                            </div>
                         </form>
                         {((item as any).alatGaleris ?? (item as any).alat_galeris)?.length > 0 && (
                             <SortableGallery
@@ -224,11 +253,15 @@ export default function AlatEdit({ base }: AlatEditProps) {
 
                 {tab === 'dokumen' && (
                     <div className="space-y-4">
-                        <form onSubmit={submitDokumen} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                            <Input label="Judul *" value={dokData.judul} onChange={(e) => setDokData('judul', e.target.value)} error={dokErrors.judul} />
-                            <Select label="Jenis" options={dokJenisOptions} value={dokData.jenis} onChange={(e) => setDokData('jenis', e.target.value)} error={dokErrors.jenis} />
-                            <FileUpload label="File PDF" accept="application/pdf" value={dokData.file} onChange={(file) => setDokData('file', file)} error={dokErrors.file} />
-                            <Button type="submit" isLoading={dokProcessing} leftIcon={<Upload className="h-4 w-4" />}>Upload</Button>
+                        <form onSubmit={submitDokumen} className="space-y-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-900/50">
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <Input label="Judul *" value={dokData.judul} onChange={(e) => setDokData('judul', e.target.value)} error={dokErrors.judul} />
+                                <Select label="Jenis" options={dokJenisOptions} value={dokData.jenis} onChange={(e) => setDokData('jenis', e.target.value)} error={dokErrors.jenis} />
+                                <FileUpload label="File PDF" accept="application/pdf" value={dokData.file} onChange={(file) => setDokData('file', file)} error={dokErrors.file} />
+                            </div>
+                            <div className="flex justify-end">
+                                <Button type="submit" isLoading={dokProcessing} leftIcon={<Upload className="h-4 w-4" />}>Upload</Button>
+                            </div>
                         </form>
                         <SortableList
                             items={(item as any).alatDokumens ?? (item as any).alat_dokumens ?? item.dokumen ?? []}
@@ -244,13 +277,28 @@ export default function AlatEdit({ base }: AlatEditProps) {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Tooltip content="Lihat dokumen">
-                                            <a href={`/storage/${d.file}`} target="_blank" rel="noreferrer" className="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"><FileText className="h-4 w-4" /></a>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedDoc(d)}
+                                                className="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                                            >
+                                                <FileText className="h-4 w-4" />
+                                            </button>
                                         </Tooltip>
                                         <ConfirmDeleteButton onDelete={() => deleteDokumen(d.id)} description={`Hapus dokumen ${d.judul}?`} />
                                     </div>
                                 </div>
                             )}
                         />
+
+                        {selectedDoc && (
+                            <DocumentPreview
+                                file={selectedDoc.file}
+                                title={selectedDoc.judul}
+                                open={!!selectedDoc}
+                                onClose={() => setSelectedDoc(null)}
+                            />
+                        )}
                     </div>
                 )}
 

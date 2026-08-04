@@ -1,11 +1,12 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CheckCircle, Eye, Search, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { DataTable } from '@/Components/DataTable';
-import { Input } from '@/Components/Input';
+import { SearchInput } from '@/Components/SearchInput';
 import Modal from '@/Components/Modal';
 import { Pagination } from '@/Components/Pagination';
 import { Tooltip } from '@/Components/Tooltip';
@@ -37,15 +38,14 @@ const statusLabelMap: Record<string, string> = {
 };
 
 export default function Verifikasi() {
-    const { items, filters } = usePage().props as any;
+    const { items } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
     const [loadingId, setLoadingId] = useState<number | null>(null);
     const [rejectModal, setRejectModal] = useState<UserItem | null>(null);
     const [rejectReason, setRejectReason] = useState('');
     const base = '/dashboard/admin/users';
-
-    const cari = (term?: string) => router.get('/dashboard/admin/verifikasi-akun', { search: term ?? search }, { preserveState: true, preserveScroll: true, replace: true });
+    const filterBase = '/dashboard/admin/verifikasi-akun';
+    const { filters, apply } = useFilter(filterBase);
 
     const action = (url: string, userId: number, payload: Record<string, any> = {}) => {
         setLoadingId(userId);
@@ -101,15 +101,13 @@ export default function Verifikasi() {
             </div>
 
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-                <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && cari()}
+                <SearchInput
+                    value={filters?.search ?? ''}
+                    onSearch={(v) => apply({ search: v })}
                     placeholder="Cari nama/email/NPM..."
-                    leftIcon={<Search className="h-4 w-4" />}
                     className="max-w-sm"
                 />
-                <Button onClick={cari} size="md">Cari</Button>
+                <Button onClick={() => apply({})} size="md" leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
             </div>
 
             <DataTable isLoading={loading} columns={columns} data={items.data as UserItem[]} keyExtractor={(row) => row.id} emptyText="Tidak ada akun menunggu verifikasi." />

@@ -1,16 +1,16 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Eye, Plus, Search, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
-import { Badge } from '../../../../Components/Badge';
-import { ConfirmActionButton } from '../../../../Components/ConfirmActionButton';
-import { DataTable } from '../../../../Components/DataTable';
-import { FilterChips } from '../../../../Components/FilterChips';
-import { Input } from '../../../../Components/Input';
-import { Pagination } from '../../../../Components/Pagination';
-import { Tooltip } from '../../../../Components/Tooltip';
-import { formatDate } from '../../../../lib/date';
-import { statusPeminjamanMap as statusMap } from '../../../../lib/status';
+import { Eye, Plus, XCircle } from 'lucide-react';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
+import { Badge } from '@/Components/Badge';
+import { ConfirmActionButton } from '@/Components/ConfirmActionButton';
+import { DataTable } from '@/Components/DataTable';
+import { FilterChips } from '@/Components/FilterChips';
+import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
+import { Tooltip } from '@/Components/Tooltip';
+import { formatDate } from '@/lib/date';
+import { statusPeminjamanMap as statusMap } from '@/lib/status';
 
 interface Peminjaman {
     id: number;
@@ -27,22 +27,12 @@ const statusOptions = [
     ...Object.entries(statusMap).map(([value, item]) => ({ value, label: item.label })),
 ];
 
-
-
 const canCancel = (status: string) => ['diajukan', 'menunggu_dosen', 'menunggu_laboran'].includes(status);
 
 export default function Index() {
-    const { items, filters } = usePage().props as any;
+    const { items } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
-
-    useEffect(() => {
-        const t = setTimeout(() => {
-            router.get('/dashboard/mahasiswa/peminjaman', { search, status }, { preserveState: true, preserveScroll: true, replace: true });
-        }, 400);
-        return () => clearTimeout(t);
-    }, [search, status]);
+    const { filters, apply } = useFilter('/dashboard/mahasiswa/peminjaman');
 
     const handleCancel = (p: Peminjaman) => {
         router.post(`/dashboard/mahasiswa/peminjaman/${p.id}/cancel`, {}, { preserveScroll: true });
@@ -96,14 +86,13 @@ export default function Index() {
 
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative max-w-md flex-1">
-                    <Input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                    <SearchInput
+                        value={filters?.search ?? ''}
+                        onSearch={(v) => apply({ search: v })}
                         placeholder="Cari kode atau nama alat..."
-                        leftIcon={<Search className="h-4 w-4" />}
                     />
                 </div>
-                <FilterChips options={statusOptions} value={status} onChange={setStatus} />
+                <FilterChips options={statusOptions} value={filters?.status ?? ''} onChange={(v) => apply({ status: v as string })} />
             </div>
 
             <DataTable<Peminjaman>

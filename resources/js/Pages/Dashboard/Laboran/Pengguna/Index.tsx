@@ -1,14 +1,15 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
+import { Edit, Eye, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { Card } from '@/Components/Card';
 import { DataTable } from '@/Components/DataTable';
-import { Input } from '@/Components/Input';
 import Modal from '@/Components/Modal';
 import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
 import { Select } from '@/Components/Select';
 import { Tooltip } from '@/Components/Tooltip';
 import { statusVerifikasiMap as statusMap } from '@/lib/status';
@@ -35,20 +36,11 @@ const statusOptions = [
 ];
 
 export default function Index() {
-    const { items, filters } = usePage().props as any;
+    const { items } = usePage().props as any;
     const loading = usePageLoading();
     const { delete: destroy, processing } = useForm();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [role, setRole] = useState(filters?.role ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
     const [deleteId, setDeleteId] = useState<number | null>(null);
-
-    useEffect(() => {
-        const t = setTimeout(() => {
-            router.get('/dashboard/laboran/pengguna', { search, role, status }, { preserveState: true, preserveScroll: true, replace: true });
-        }, 400);
-        return () => clearTimeout(t);
-    }, [search, role, status]);
+    const { filters, apply } = useFilter('/dashboard/laboran/pengguna');
 
     const handleDelete = () => {
         if (!deleteId) return;
@@ -107,9 +99,14 @@ export default function Index() {
 
             <Card className="mb-4">
                 <div className="flex flex-col gap-3 sm:flex-row">
-                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama, email, atau NPM/NIP..." leftIcon={<Search className="h-4 w-4" />} className="flex-1" />
-                    <Select options={roleOptions} value={role} onChange={(e) => setRole(e.target.value)} className="w-full sm:w-44" />
-                    <Select options={statusOptions} value={status} onChange={(e) => setStatus(e.target.value)} className="w-full sm:w-52" />
+                    <SearchInput
+                        value={filters?.search ?? ''}
+                        onSearch={(v) => apply({ search: v })}
+                        placeholder="Cari nama, email, atau NPM/NIP..."
+                        className="flex-1"
+                    />
+                    <Select options={roleOptions} value={filters?.role ?? ''} onChange={(e) => apply({ role: e.target.value })} className="w-full sm:w-44" />
+                    <Select options={statusOptions} value={filters?.status ?? ''} onChange={(e) => apply({ status: e.target.value })} className="w-full sm:w-52" />
                 </div>
             </Card>
 

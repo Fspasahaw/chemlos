@@ -1,7 +1,8 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Eye, FileText, Pencil, Plus, QrCode, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
+import { useMemo } from 'react';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { DataTable } from '@/Components/DataTable';
@@ -51,12 +52,11 @@ const kondisiLabelMap: Record<string, string> = {
 };
 
 export default function Index() {
-    const { items, filters, labs, kategoris, base = '/dashboard/admin/alat', features } = usePage().props as any;
+    const { items, labs, kategoris, base = '/dashboard/admin/alat', features } = usePage().props as any;
     const isEnabled = (key: string) => !!features?.[key];
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [lab, setLab] = useState(filters?.laboratorium ?? '');
-    const [kat, setKat] = useState(filters?.kategori ?? '');
+    const { filters, apply } = useFilter(base);
+
     const labOptions = useMemo(() => [
         { value: '', label: 'Semua Lab' },
         ...Object.entries(labs as Record<string, string>).map(([id, nama]) => ({ value: id, label: nama })),
@@ -66,8 +66,6 @@ export default function Index() {
         { value: '', label: 'Semua Kategori' },
         ...Object.entries(kategoris as Record<string, string>).map(([id, nama]) => ({ value: id, label: nama })),
     ], [kategoris]);
-
-    const cari = (term?: string) => router.get(base, { search: term ?? search, laboratorium: lab, kategori: kat }, { preserveState: true, preserveScroll: true, replace: true });
 
     const columns = [
         { header: 'Nama', accessor: 'nama' as keyof Tool },
@@ -131,15 +129,14 @@ export default function Index() {
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
                     <SearchInput
-                        value={search}
-                        onChange={(v) => setSearch(v)}
-                        onSearch={cari}
+                        value={filters?.search ?? ''}
+                        onSearch={(v) => apply({ search: v })}
                         placeholder="Cari alat..."
                         className="max-w-sm"
                     />
-                    <Select options={labOptions} value={lab} onChange={(e) => { setLab(e.target.value); cari(); }} className="max-w-xs" />
-                    <Select options={kategoriOptions} value={kat} onChange={(e) => { setKat(e.target.value); cari(); }} className="max-w-xs" />
-                    <Button onClick={cari} size="md">Cari</Button>
+                    <Select options={labOptions} value={filters?.laboratorium ?? ''} onChange={(e) => apply({ laboratorium: e.target.value })} className="max-w-xs" />
+                    <Select options={kategoriOptions} value={filters?.kategori ?? ''} onChange={(e) => apply({ kategori: e.target.value })} className="max-w-xs" />
+                    <Button onClick={() => apply({})} size="md">Cari</Button>
                 </div>
             </div>
 

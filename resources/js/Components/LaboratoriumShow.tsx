@@ -24,6 +24,7 @@ import { CardWithBackground } from './CardWithBackground';
 import { DocumentPreview } from './DocumentPreview';
 import { ImageWithFallback } from './ImageWithFallback';
 import { Lightbox } from './Lightbox';
+import { Timeline } from './Timeline';
 import { formatDate } from '../lib/date';
 import { alatStatusMap, dokumenJenisMap, kondisiAlatMap, peranLabelMap, statusKerusakanMap, statusMaintenanceMap, statusPeminjamanMap } from '../lib/status';
 
@@ -406,35 +407,16 @@ export default function LaboratoriumShow({ base, editHref }: LaboratoriumShowPro
                                                 })),
                                             ].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 
-                                            return historyItems.length === 0 ? (
-                                                <p className="text-slate-500 dark:text-slate-400">Belum ada riwayat.</p>
-                                            ) : (
-                                                <div className="relative pl-12">
-                                                    <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
-                                                    {historyItems.map((h, idx) => {
-                                                        const Icon = h.type === 'peminjaman' ? CalendarIcon : h.type === 'kerusakan' ? Wrench : Wrench;
-                                                        const iconClass =
-                                                            h.type === 'peminjaman'
-                                                                ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300'
-                                                                : h.type === 'kerusakan'
-                                                                  ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-300'
-                                                                  : 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-300';
-                                                        return (
-                                                            <div key={idx} className="relative mb-8 last:mb-0">
-                                                                <span className={`absolute -left-12 top-0 flex h-10 w-10 items-center justify-center rounded-full ${iconClass}`}>
-                                                                    <Icon className="h-5 w-5" />
-                                                                </span>
-                                                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{h.title}</p>
-                                                                <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                                    {formatDate(h.date)}
-                                                                    {h.end ? ` - ${formatDate(h.end)}` : ''} &bull; {h.status}
-                                                                </p>
-                                                                {h.description && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{h.description}</p>}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            );
+                                            const timelineItems = historyItems.map((h, idx) => ({
+                                                id: idx,
+                                                icon: (h.type === 'peminjaman' ? 'package' : h.type === 'kerusakan' ? 'warning' : 'wrench') as any,
+                                                title: h.title,
+                                                description: h.description,
+                                                status: h.status,
+                                                date: `${formatDate(h.date)}${h.end ? ` - ${formatDate(h.end)}` : ''}`,
+                                            }));
+
+                                            return <Timeline items={timelineItems} />;
                                         })()}
                                     </div>
                                 </div>

@@ -1,16 +1,17 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { Search, XCircle, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
-import { Badge } from '../../../../Components/Badge';
-import { Button } from '../../../../Components/Button';
-import { Card } from '../../../../Components/Card';
-import { DataTable, Column } from '../../../../Components/DataTable';
-import { Input } from '../../../../Components/Input';
-import { Pagination } from '../../../../Components/Pagination';
-import { SearchInput } from '../../../../Components/SearchInput';
-import { Select } from '../../../../Components/Select';
-import { statusVerifikasiMap as statusMap } from '../../../../lib/status';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
+import { Badge } from '@/Components/Badge';
+import { Button } from '@/Components/Button';
+import { Card } from '@/Components/Card';
+import { DataTable, Column } from '@/Components/DataTable';
+import { Input } from '@/Components/Input';
+import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
+import { Select } from '@/Components/Select';
+import { statusVerifikasiMap as statusMap } from '@/lib/status';
 
 interface UserItem {
     id: number;
@@ -22,13 +23,11 @@ interface UserItem {
 }
 
 export default function Index() {
-    const { items, filters } = usePage().props as any;
+    const { items } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
+    const { filters, apply } = useFilter('/dashboard/laboran/verifikasi-akun');
     const [rejectId, setRejectId] = useState<number | null>(null);
     const [reason, setReason] = useState('');
-
-    const apply = (params: Record<string, string>) => router.get('/dashboard/laboran/verifikasi-akun', params, { preserveState: true, preserveScroll: true, replace: true });
 
     const action = (url: string, body?: Record<string, any>) => router.post(url, body ?? {}, { preserveScroll: true });
 
@@ -107,8 +106,7 @@ export default function Index() {
             <Card>
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row">
                     <SearchInput
-                        value={search}
-                        onChange={(v) => setSearch(v)}
+                        value={filters?.search ?? ''}
                         onSearch={(val) => apply({ search: val })}
                         placeholder="Cari nama/email/NPM/NIP"
                         className="flex-1"
@@ -121,10 +119,10 @@ export default function Index() {
                             { value: 'rejected', label: 'Ditolak' },
                         ]}
                         value={filters?.status ?? ''}
-                        onChange={(e) => apply({ status: e.target.value, search })}
+                        onChange={(e) => apply({ status: e.target.value })}
                         className="w-48"
                     />
-                    <Button onClick={() => apply({ search })} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
+                    <Button onClick={() => apply({})} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
                 </div>
                 <DataTable
                     isLoading={loading}

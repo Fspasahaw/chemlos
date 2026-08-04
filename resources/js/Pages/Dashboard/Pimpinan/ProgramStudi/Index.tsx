@@ -1,21 +1,19 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Edit, Search } from 'lucide-react';
-import { useState } from 'react';
-import { Badge } from '../../../../Components/Badge';
-import { Button } from '../../../../Components/Button';
-import { Card } from '../../../../Components/Card';
-import { Pagination } from '../../../../Components/Pagination';
-import { SearchInput } from '../../../../Components/SearchInput';
-import { Select } from '../../../../Components/Select';
-import { Tooltip } from '../../../../Components/Tooltip';
-import { EmptyTable } from '../../../../Components/EmptyTable';
+import { useFilter } from '@/Hooks/useFilter';
+import { Badge } from '@/Components/Badge';
+import { Button } from '@/Components/Button';
+import { Card } from '@/Components/Card';
+import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
+import { Select } from '@/Components/Select';
+import { Tooltip } from '@/Components/Tooltip';
+import { EmptyTable } from '@/Components/EmptyTable';
 
 export default function Index() {
-    const { items, filters, ketua_prodi } = usePage().props as any;
-    const [search, setSearch] = useState(filters?.search ?? '');
+    const { items, ketua_prodi } = usePage().props as any;
     const isKetuaProdi = ketua_prodi?.jabatan_pimpinan === 'ketua_program_studi' && ketua_prodi?.program_studi_id;
-
-    const apply = (params: Record<string, string>) => router.get('/dashboard/pimpinan/program-studi', params, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter('/dashboard/pimpinan/program-studi');
 
     return (
         <>
@@ -27,8 +25,7 @@ export default function Index() {
             <Card>
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row">
                     <SearchInput
-                        value={search}
-                        onChange={(v) => setSearch(v)}
+                        value={filters?.search ?? ''}
                         onSearch={(val) => apply({ search: val })}
                         placeholder="Cari nama/kode"
                         className="flex-1"
@@ -43,7 +40,7 @@ export default function Index() {
                             { value: 'Profesi', label: 'Profesi' },
                         ]}
                         value={filters?.jenjang ?? ''}
-                        onChange={(e) => apply({ jenjang: e.target.value, search })}
+                        onChange={(e) => apply({ jenjang: e.target.value })}
                         className="w-44"
                     />
                     <Select
@@ -53,10 +50,10 @@ export default function Index() {
                             { value: 'nonaktif', label: 'Nonaktif' },
                         ]}
                         value={filters?.status ?? ''}
-                        onChange={(e) => apply({ status: e.target.value, search })}
+                        onChange={(e) => apply({ status: e.target.value })}
                         className="w-44"
                     />
-                    <Button onClick={() => apply({ search })} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
+                    <Button onClick={() => apply({})} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
                 </div>
                 <div className="overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800/80">
                     <table className="w-full text-sm">

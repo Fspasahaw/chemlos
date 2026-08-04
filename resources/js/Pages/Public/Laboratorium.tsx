@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { FlaskConical, Grid3X3, Home, List, Search, SearchX } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '../../Components/Badge';
@@ -10,6 +10,7 @@ import { Pagination } from '../../Components/Pagination';
 import { SearchInput } from '../../Components/SearchInput';
 import { SkeletonCard } from '../../Components/Skeleton';
 import { Tooltip } from '../../Components/Tooltip';
+import { useFilter } from '../../Hooks/useFilter';
 import { usePageLoading } from '../../Hooks/usePageLoading';
 import { laboratoriumStatusMap } from '../../lib/status';
 
@@ -37,40 +38,14 @@ interface LaboratoriumPageProps {
 
 const statusVariant = (status: string) => status === 'aktif' ? 'success' : 'neutral';
 
-export default function Laboratorium({ laboratorium, filters, statusOptions, lokasiOptions, kapasitasOptions }: LaboratoriumPageProps) {
+export default function Laboratorium({ laboratorium, statusOptions, lokasiOptions, kapasitasOptions }: LaboratoriumPageProps) {
     const { features } = usePage().props as any;
     const isEnabled = (key: string) => !!features?.[key];
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters.search || '');
-    const [status, setStatus] = useState(filters.status || '');
-    const [lokasi, setLokasi] = useState(filters.lokasi || '');
-    const [kapasitas, setKapasitas] = useState(filters.kapasitas || '');
     const [view, setView] = useState<'grid' | 'list'>('grid');
+    const { filters, apply } = useFilter('/laboratorium');
 
-    const applyFilters = (payload: Record<string, string> = {}) => {
-        const params: Record<string, string> = {};
-        const nextSearch = payload.search !== undefined ? payload.search : search;
-        if (nextSearch) params.search = nextSearch;
-        if (status || payload.status !== undefined) {
-            const next = payload.status !== undefined ? payload.status : status;
-            if (next) params.status = next;
-        }
-        if (lokasi || payload.lokasi !== undefined) {
-            const next = payload.lokasi !== undefined ? payload.lokasi : lokasi;
-            if (next) params.lokasi = next;
-        }
-        if (kapasitas || payload.kapasitas !== undefined) {
-            const next = payload.kapasitas !== undefined ? payload.kapasitas : kapasitas;
-            if (next) params.kapasitas = next;
-        }
-        router.get('/laboratorium', params, { preserveState: true, preserveScroll: true, replace: true });
-    };
-
-
-    const reset = () => {
-        setSearch(''); setStatus(''); setLokasi(''); setKapasitas('');
-        router.get('/laboratorium', {}, { preserveState: true, preserveScroll: true, replace: true });
-    };
+    const reset = () => apply({ search: '', status: '', lokasi: '', kapasitas: '' });
 
     const photoUrl = (path: string | null) => (path ? `/storage/${path}` : null);
 
@@ -92,14 +67,13 @@ export default function Laboratorium({ laboratorium, filters, statusOptions, lok
             <section className="mx-auto max-w-7xl px-4 py-10">
                 <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
                     <SearchInput
-                        value={search}
-                        onChange={(v) => setSearch(v)}
-                        onSearch={(val) => applyFilters({ search: val })}
+                        value={filters?.search ?? ''}
+                        onSearch={(val) => apply({ search: val })}
                         placeholder="Cari laboratorium..."
                         className="flex-1"
                     />
                     <div className="flex items-center gap-2">
-                        <Button onClick={() => applyFilters()} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
+                        <Button onClick={() => apply({})} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
                         <Tooltip content={view === 'grid' ? 'Tampilan List' : 'Tampilan Grid'}>
                             <button onClick={() => setView(view === 'grid' ? 'list' : 'grid')} className="rounded-lg border border-slate-300 bg-white p-2.5 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" aria-label={view === 'grid' ? 'Tampilan List' : 'Tampilan Grid'}>
                                 {view === 'grid' ? <List className="h-5 w-5" /> : <Grid3X3 className="h-5 w-5" />}
@@ -111,15 +85,15 @@ export default function Laboratorium({ laboratorium, filters, statusOptions, lok
                 <div className="mb-6 flex flex-col gap-4">
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Status:</span>
-                        <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); applyFilters({ status: v as string }); }} />
+                        <FilterChips options={statusOptions} value={filters?.status ?? ''} onChange={(v) => apply({ status: v as string })} />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Lokasi:</span>
-                        <FilterChips options={lokasiOptions} value={lokasi} onChange={(v) => { setLokasi(v as string); applyFilters({ lokasi: v as string }); }} />
+                        <FilterChips options={lokasiOptions} value={filters?.lokasi ?? ''} onChange={(v) => apply({ lokasi: v as string })} />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Kapasitas:</span>
-                        <FilterChips options={kapasitasOptions} value={kapasitas} onChange={(v) => { setKapasitas(v as string); applyFilters({ kapasitas: v as string }); }} />
+                        <FilterChips options={kapasitasOptions} value={filters?.kapasitas ?? ''} onChange={(v) => apply({ kapasitas: v as string })} />
                     </div>
                 </div>
 

@@ -126,6 +126,11 @@ class AlatController extends Controller
                 Storage::disk('public')->delete($alat->foto_utama);
             }
             $data['foto_utama'] = $request->file('foto_utama')->store('alat', 'public');
+        } elseif ($request->boolean('remove_foto_utama')) {
+            if ($alat->foto_utama) {
+                Storage::disk('public')->delete($alat->foto_utama);
+            }
+            $data['foto_utama'] = null;
         } else {
             unset($data['foto_utama']);
         }

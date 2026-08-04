@@ -15,6 +15,7 @@ import { Select } from '@/Components/Select';
 import { SelectSearchMulti } from '@/Components/SelectSearchMulti';
 import { Tabs } from '@/Components/Tabs';
 import { ConfirmDeleteButton } from '@/Components/ConfirmDeleteButton';
+import { DocumentPreview } from '@/Components/DocumentPreview';
 import { SortableList } from '@/Components/SortableList';
 import { Textarea } from '@/Components/Textarea';
 import { TimePicker } from '@/Components/TimePicker';
@@ -44,12 +45,14 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
         ? ((item.laboratorium_pengelolas ?? []) as { user_id: number; peran: string }[]).map((p) => ({ user_id: p.user_id, peran: p.peran || 'laboran' }))
         : [];
 
+    const lokasiAwal = [item.gedung ?? '', item.lantai ?? '', item.ruangan ?? ''].filter(Boolean).join(', ');
     const baseForm = {
         nama: item.nama ?? '', kode: item.kode ?? '', deskripsi: item.deskripsi ?? '',
-        lokasi: item.lokasi ?? '', gedung: item.gedung ?? '', lantai: item.lantai ?? '', ruangan: item.ruangan ?? '',
-        kapasitas: String(item.kapasitas ?? ''), jam_buka: item.jam_buka ?? '08:00', jam_tutup: item.jam_tutup ?? '17:00',
+        lokasi: lokasiAwal || (item.lokasi ?? ''), gedung: item.gedung ?? '', lantai: item.lantai ?? '', ruangan: item.ruangan ?? '',
+        kapasitas: String(item.kapasitas ?? ''), jam_buka: (item.jam_buka ?? '08:00').slice(0, 5), jam_tutup: (item.jam_tutup ?? '17:00').slice(0, 5),
         hari_operasional: item.hari_operasional ?? [], email: item.email ?? '', telepon: item.telepon ?? '',
-        status: item.status ?? 'aktif', foto_utama: null as File | null,
+        status: item.status ?? 'aktif', foto_utama: item.foto_utama as File | string | null,
+        remove_foto_utama: false,
     };
 
     const pengelolaForm = canManagePengelola
@@ -61,8 +64,13 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
 
     const { data, setData, post: postMain, processing, errors, transform } = useForm<any>({ ...baseForm, ...pengelolaForm });
 
+    useEffect(() => {
+        const next = [data.gedung, data.lantai, data.ruangan].filter(Boolean).join(', ');
+        if (next !== data.lokasi) setData('lokasi', next);
+    }, [data.gedung, data.lantai, data.ruangan]);
+
     const [tab, setTab] = useState('profil');
-    const [selectedKategori, setSelectedKategori] = useState('');
+    const [selectedDoc, setSelectedDoc] = useState<{ id: number; file: string; judul: string; jenis: string } | null>(null);
     const { data: galData, setData: setGalData, post: postGal, processing: galProcessing, errors: galErrors } = useForm({ file: null as File | null, judul: '' });
     const { data: dokData, setData: setDokData, post: postDok, processing: dokProcessing, errors: dokErrors } = useForm({ file: null as File | null, judul: '', jenis: 'sop' });
     const { data: ttData, setData: setTtData, post: postTt, processing: ttProcessing, errors: ttErrors, reset: resetTt } = useForm({ isi: '' });
@@ -104,18 +112,32 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        transform((formData) => ({ ...formData, _method: 'PUT' }));
+        transform((formData) => ({ ...formData, _method: 'PUT', remove_foto_utama: data.remove_foto_utama ? '1' : '0' }));
         postMain(`${base}/${item.id}`, { forceFormData: true });
     };
 
     const submitGaleri = (e: React.FormEvent) => {
         e.preventDefault();
-        postGal(`${base}/${item.id}/galeri`, { forceFormData: galData.file !== null });
+        postGal(`${base}/${item.id}/galeri`, {
+            forceFormData: galData.file !== null,
+            preserveScroll: true,
+            onSuccess: () => {
+                setGalData({ file: null, judul: '' });
+                router.reload({ only: ['item'], preserveScroll: true });
+            },
+        });
     };
 
     const submitDokumen = (e: React.FormEvent) => {
         e.preventDefault();
-        postDok(`${base}/${item.id}/dokumen`, { forceFormData: dokData.file !== null });
+        postDok(`${base}/${item.id}/dokumen`, {
+            forceFormData: dokData.file !== null,
+            preserveScroll: true,
+            onSuccess: () => {
+                setDokData({ file: null, judul: '', jenis: 'sop' });
+                router.reload({ only: ['item'], preserveScroll: true });
+            },
+        });
     };
 
     const deleteGaleri = (id: number) => router.delete(`${base}/${item.id}/galeri/${id}`);
@@ -145,20 +167,13 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
 
     const tabs = [
         { key: 'profil', label: 'Profil' },
-        { key: 'alat', label: 'Alat' },
         { key: 'galeri', label: 'Galeri' },
         { key: 'dokumen', label: 'Dokumen' },
         { key: 'tata-tertib', label: 'Tata Tertib' },
-        { key: 'jadwal', label: 'Jadwal' },
-        { key: 'riwayat', label: 'Riwayat' },
     ];
 
     const dokumenLain = ((item as any).laboratoriumDokumens ?? (item as any).laboratorium_dokumens ?? item.dokumen ?? []).filter((d: any) => d.jenis !== 'tata_tertib');
 
-    const alatBase = base.replace('/laboratorium', '/alat');
-    const alats = (item.alats ?? []) as { id: number; nama: string; kode: string; slug?: string; foto_utama: string | null; kondisi: string; stok_tersedia: number; kategori_alat?: { nama: string } | null }[];
-    const kategoriOptions = Array.from(new Set(alats.map((a) => a.kategori_alat?.nama).filter(Boolean) as string[]));
-    const filteredAlats = selectedKategori ? alats.filter((a) => a.kategori_alat?.nama === selectedKategori) : alats;
     return (
         <>
             <Head title="Edit Laboratorium" />
@@ -176,7 +191,7 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
                         <div className="grid gap-4 md:grid-cols-2">
                             <Input label="Nama *" value={data.nama} onChange={(e) => setData('nama', e.target.value)} error={errors.nama} />
                             <Input label="Kode *" value={data.kode} onChange={(e) => setData('kode', e.target.value)} error={errors.kode} />
-                            <Input label="Lokasi *" value={data.lokasi} onChange={(e) => setData('lokasi', e.target.value)} error={errors.lokasi} />
+                            <Input label="Lokasi *" value={data.lokasi} disabled error={errors.lokasi} />
                             <Input label="Gedung" value={data.gedung} onChange={(e) => setData('gedung', e.target.value)} error={errors.gedung} />
                             <Input label="Lantai" value={data.lantai} onChange={(e) => setData('lantai', e.target.value)} error={errors.lantai} />
                             <Input label="Ruangan" value={data.ruangan} onChange={(e) => setData('ruangan', e.target.value)} error={errors.ruangan} />
@@ -202,7 +217,15 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
                             {errors.hari_operasional && <p className="mt-1 text-xs text-rose-500">{errors.hari_operasional}</p>}
                         </div>
                         <Textarea label="Deskripsi" value={data.deskripsi} onChange={(e) => setData('deskripsi', e.target.value)} rows={3} error={errors.deskripsi} />
-                        <FileUpload label="Foto Utama" value={data.foto_utama ?? item.foto_utama} onChange={(file) => setData('foto_utama', file)} error={errors.foto_utama} />
+                        <FileUpload
+                            label="Foto Utama"
+                            value={data.foto_utama}
+                            onChange={(file) => {
+                                setData('foto_utama', file);
+                                setData('remove_foto_utama', file === null && !!item.foto_utama);
+                            }}
+                            error={errors.foto_utama}
+                        />
                         <div>
                             <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Pengelola</label>
                             {canManagePengelola ? (
@@ -266,10 +289,14 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
 
                 {tab === 'galeri' && (
                     <div className="space-y-4">
-                        <form onSubmit={submitGaleri} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                            <FileUpload label="Tambah Foto Galeri" value={galData.file} onChange={(file) => setGalData('file', file)} error={galErrors.file} className="flex-1" />
-                            <Input label="Judul" value={galData.judul} onChange={(e) => setGalData('judul', e.target.value)} error={galErrors.judul} />
-                            <Button type="submit" isLoading={galProcessing} leftIcon={<Save className="h-4 w-4" />}>Tambah</Button>
+                        <form onSubmit={submitGaleri} className="space-y-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-900/50">
+                            <FileUpload label="Tambah Foto Galeri" value={galData.file} onChange={(file) => setGalData('file', file)} error={galErrors.file} />
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <Input label="Judul" value={galData.judul} onChange={(e) => setGalData('judul', e.target.value)} error={galErrors.judul} />
+                                <div className="flex items-end">
+                                    <Button type="submit" isLoading={galProcessing} leftIcon={<Save className="h-4 w-4" />}>Tambah</Button>
+                                </div>
+                            </div>
                         </form>
                         {((item as any).laboratoriumGaleris ?? (item as any).laboratorium_galeris)?.length > 0 && (
                             <SortableGallery
@@ -283,11 +310,15 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
 
                 {tab === 'dokumen' && (
                     <div className="space-y-4">
-                        <form onSubmit={submitDokumen} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                            <Input label="Judul *" value={dokData.judul} onChange={(e) => setDokData('judul', e.target.value)} error={dokErrors.judul} />
-                            <Select label="Jenis" options={[{ value: 'sop', label: 'SOP' }, { value: 'tata_tertib', label: 'Tata Tertib' }, { value: 'lainnya', label: 'Lainnya' }]} value={dokData.jenis} onChange={(e) => setDokData('jenis', e.target.value)} error={dokErrors.jenis} />
-                            <FileUpload label="File PDF" accept="application/pdf" value={dokData.file} onChange={(file) => setDokData('file', file)} error={dokErrors.file} />
-                            <Button type="submit" isLoading={dokProcessing} leftIcon={<Save className="h-4 w-4" />}>Upload</Button>
+                        <form onSubmit={submitDokumen} className="space-y-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800/80 dark:bg-slate-900/50">
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <Input label="Judul *" value={dokData.judul} onChange={(e) => setDokData('judul', e.target.value)} error={dokErrors.judul} />
+                                <Select label="Jenis" options={[{ value: 'sop', label: 'SOP' }, { value: 'tata_tertib', label: 'Tata Tertib' }, { value: 'lainnya', label: 'Lainnya' }]} value={dokData.jenis} onChange={(e) => setDokData('jenis', e.target.value)} error={dokErrors.jenis} />
+                                <FileUpload label="File PDF" accept="application/pdf" value={dokData.file} onChange={(file) => setDokData('file', file)} error={dokErrors.file} />
+                            </div>
+                            <div className="flex justify-end">
+                                <Button type="submit" isLoading={dokProcessing} leftIcon={<Save className="h-4 w-4" />}>Upload</Button>
+                            </div>
                         </form>
                         <SortableList
                             items={dokumenLain}
@@ -303,13 +334,28 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Tooltip content="Lihat dokumen">
-                                            <a href={`/storage/${d.file}`} target="_blank" rel="noreferrer" className="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"><FileText className="h-4 w-4" /></a>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedDoc(d)}
+                                                className="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                                            >
+                                                <FileText className="h-4 w-4" />
+                                            </button>
                                         </Tooltip>
                                         <ConfirmDeleteButton onDelete={() => deleteDokumen(d.id)} description={`Hapus dokumen ${d.judul}?`} />
                                     </div>
                                 </div>
                             )}
                         />
+
+                        {selectedDoc && (
+                            <DocumentPreview
+                                file={selectedDoc.file}
+                                title={selectedDoc.judul}
+                                open={!!selectedDoc}
+                                onClose={() => setSelectedDoc(null)}
+                            />
+                        )}
                     </div>
                 )}
 
@@ -351,117 +397,6 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
                     </div>
                 )}
 
-                {tab === 'alat' && (
-                    <div className="space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <Link href={`${alatBase}/create`}>
-                                <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>Tambah Alat</Button>
-                            </Link>
-                            {kategoriOptions.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedKategori('')}
-                                        className={`rounded-full px-3 py-1 text-xs font-medium transition ${selectedKategori === '' ? 'bg-indigo-600 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}
-                                    >Semua</button>
-                                    {kategoriOptions.map((k) => (
-                                        <button
-                                            type="button"
-                                            key={k}
-                                            onClick={() => setSelectedKategori(k)}
-                                            className={`rounded-full px-3 py-1 text-xs font-medium transition ${selectedKategori === k ? 'bg-indigo-600 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}
-                                        >{k}</button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        {filteredAlats.length === 0 ? (
-                            <p className="text-center text-slate-500 dark:text-slate-400">Tidak ada alat tersedia.</p>
-                        ) : (
-                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                                {filteredAlats.map((alat) => (
-                                    <Link
-                                        key={alat.id}
-                                        href={`${alatBase}/${alat.id}`}
-                                        className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-800/80 dark:bg-slate-900"
-                                    >
-                                        <div className="mb-3 aspect-video overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
-                                            {alat.foto_utama ? (
-                                                <ImageWithFallback src={`/storage/${alat.foto_utama}`} alt={alat.nama} className="h-full w-full object-cover" />
-                                            ) : (
-                                                <div className="flex h-full items-center justify-center text-slate-400">
-                                                    <FlaskConical className="h-8 w-8" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <h3 className="font-semibold text-slate-900 dark:text-slate-100">{alat.nama}</h3>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">{alat.kategori_alat?.nama ?? 'Umum'}</p>
-                                        <div className="mt-3 flex items-center justify-between text-xs">
-                                            <span className="rounded-full bg-emerald-100 px-2 py-1 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
-                                                {alat.stok_tersedia} tersedia
-                                            </span>
-                                            <span className="text-slate-500 dark:text-slate-400">{kondisiAlatMap[alat.kondisi] ?? alat.kondisi}</span>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {tab === 'jadwal' && (
-                    <div className="space-y-4">
-                        <Calendar
-                            events={events ?? []}
-                            height="500px"
-                            showFilters={(events ?? []).length > 0}
-                        />
-                    </div>
-                )}
-
-                {tab === 'riwayat' && (
-                    <div className="grid gap-6 lg:grid-cols-3">
-                        <section>
-                            <h4 className="mb-3 text-xs font-semibold uppercase text-slate-500">Peminjaman Terkini</h4>
-                            {riwayat?.peminjaman?.length ? (
-                                <Timeline items={riwayat.peminjaman.map((p: any) => ({
-                                    id: p.id,
-                                    icon: ['selesai', 'dibatalkan', 'ditolak'].includes(p.status) ? (p.status === 'selesai' ? 'check' : 'warning') : 'package',
-                                    title: `${p.user?.nama_lengkap ?? 'Pengguna'} — ${p.kode ?? ''}`,
-                                    description: p.details?.map((d: any) => `${d.alat?.nama ?? 'Alat'} x${d.jumlah}`).join(', '),
-                                    status: statusPeminjamanMap[p.status]?.label ?? p.status,
-                                    date: `${formatDate(p.tanggal_mulai)} s.d ${formatDate(p.tanggal_selesai)}`,
-                                }))} />
-                            ) : <EmptyState title="Belum ada peminjaman" description="Laboratorium ini belum memiliki riwayat peminjaman." />}
-                        </section>
-                        <section>
-                            <h4 className="mb-3 text-xs font-semibold uppercase text-slate-500">Kerusakan</h4>
-                            {riwayat?.kerusakan?.length ? (
-                                <Timeline items={riwayat.kerusakan.map((k: any) => ({
-                                    id: k.id,
-                                    icon: 'warning',
-                                    title: `${k.alat?.nama ?? 'Alat'} — ${kondisiAlatMap[k.kondisi] ?? k.kondisi}`,
-                                    description: `${k.jumlah_unit ?? k.jumlah} unit • Pelapor: ${k.pelapor?.nama_lengkap ?? '-'}`,
-                                    status: statusKerusakanMap[k.status]?.label ?? k.status,
-                                    date: k.tanggal_dilaporkan ?? k.created_at,
-                                }))} />
-                            ) : <EmptyState title="Belum ada kerusakan" description="Tidak ada laporan kerusakan di laboratorium ini." />}
-                        </section>
-                        <section>
-                            <h4 className="mb-3 text-xs font-semibold uppercase text-slate-500">Maintenance</h4>
-                            {riwayat?.maintenance?.length ? (
-                                <Timeline items={riwayat.maintenance.map((m: any) => ({
-                                    id: m.id,
-                                    icon: 'wrench',
-                                    title: m.alat?.nama ?? 'Alat',
-                                    description: `${statusMaintenanceMap[m.status]?.label ?? m.status} • ${m.laboran?.nama_lengkap ?? '-'}`,
-                                    status: statusMaintenanceMap[m.status]?.label ?? m.status,
-                                    date: `${formatDate(m.tanggal_mulai)}${m.tanggal_selesai ? ' s.d ' + formatDate(m.tanggal_selesai) : ''}`,
-                                }))} />
-                            ) : <EmptyState title="Belum ada maintenance" description="Belum ada riwayat pemeliharaan." />}
-                        </section>
-                    </div>
-                )}
             </div>
         </>
     );

@@ -1,19 +1,20 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CheckCircle, Eye, Search, XCircle } from 'lucide-react';
+import { CheckCircle, Eye, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { ConfirmDeleteButton } from '@/Components/ConfirmDeleteButton';
 import { DataTable } from '@/Components/DataTable';
 import { DatePicker } from '@/Components/DatePicker';
 import { FilterChips } from '@/Components/FilterChips';
-import { Input } from '@/Components/Input';
 import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
 import { Select } from '@/Components/Select';
 import { Textarea } from '@/Components/Textarea';
-import { formatDate } from '../../../../lib/date';
-import { statusPeminjamanMap as statusMap } from '../../../../lib/status';
+import { formatDate } from '@/lib/date';
+import { statusPeminjamanMap as statusMap } from '@/lib/status';
 
 interface Peminjaman {
     id: number;
@@ -36,18 +37,12 @@ const statusOptions = [
 ];
 
 export default function Index() {
-    const { items, filters, labs } = usePage().props as any;
+    const { items, labs } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
-    const [lab, setLab] = useState(filters?.laboratorium ?? '');
-    const [start, setStart] = useState(filters?.start ?? '');
-    const [end, setEnd] = useState(filters?.end ?? '');
     const [rejectId, setRejectId] = useState<number | null>(null);
     const [alasan, setAlasan] = useState('');
     const base = '/dashboard/admin/peminjaman';
-
-    const cari = (term?: string) => router.get(base, { search: term ?? search, status, laboratorium: lab, start, end }, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter(base);
 
     const labOptions = [
         { value: '', label: 'Semua Lab' },
@@ -107,13 +102,13 @@ export default function Index() {
             <h1 className="mb-6 text-2xl font-bold text-slate-900 dark:text-slate-100">Manajemen Peminjaman</h1>
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end flex-wrap">
-                    <Input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && cari()} placeholder="Cari kode/peminjam/alat..." leftIcon={<Search className="h-4 w-4" />} className="max-w-sm" />
-                    <Select options={labOptions} value={lab} onChange={(e) => { setLab(e.target.value); cari(); }} className="max-w-xs" />
-                    <DatePicker value={start} onChange={(e) => setStart(e.target.value)} placeholder="Mulai" className="max-w-[180px]" />
-                    <DatePicker value={end} onChange={(e) => setEnd(e.target.value)} placeholder="Selesai" className="max-w-[180px]" />
-                    <Button onClick={cari} size="md">Cari</Button>
+                    <SearchInput value={filters?.search ?? ''} onSearch={(v) => apply({ search: v })} placeholder="Cari kode/peminjam/alat..." className="max-w-sm" />
+                    <Select options={labOptions} value={filters?.laboratorium ?? ''} onChange={(e) => apply({ laboratorium: e.target.value })} className="max-w-xs" />
+                    <DatePicker value={filters?.start ?? ''} onChange={(e) => apply({ start: e.target.value })} placeholder="Mulai" className="max-w-[180px]" />
+                    <DatePicker value={filters?.end ?? ''} onChange={(e) => apply({ end: e.target.value })} placeholder="Selesai" className="max-w-[180px]" />
+                    <Button onClick={() => apply({})} size="md">Cari</Button>
                 </div>
-                <FilterChips options={statusOptions} value={status} onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v, laboratorium: lab, start, end }, { preserveState: true, preserveScroll: true, replace: true }); }} />
+                <FilterChips options={statusOptions} value={filters?.status ?? ''} onChange={(v) => apply({ status: v as string })} />
             </div>
             <DataTable isLoading={loading} columns={columns} data={items.data as Peminjaman[]} keyExtractor={(p) => p.id} emptyText="Tidak ada data peminjaman." />
             <Pagination links={items.links} from={items.from} to={items.to} total={items.total} />

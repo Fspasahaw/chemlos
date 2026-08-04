@@ -1,12 +1,12 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Clock, Home, Play } from 'lucide-react';
-import { useState } from 'react';
 import { FilterChips } from '../../Components/FilterChips';
 import { ImageWithFallback } from '../../Components/ImageWithFallback';
 import { Pagination } from '../../Components/Pagination';
 import { SearchInput } from '../../Components/SearchInput';
 import { SkeletonCard } from '../../Components/Skeleton';
 import { usePageLoading } from '../../Hooks/usePageLoading';
+import { useFilter } from '../../Hooks/useFilter';
 import { formatDate } from '../../lib/date';
 import { videoJenisMap } from '../../lib/status';
 
@@ -29,20 +29,9 @@ interface TutorialPageProps {
     jenisOptions: FilterOption[];
 }
 
-export default function Tutorial({ tutorials, filters, jenisOptions }: TutorialPageProps) {
+export default function Tutorial({ tutorials, jenisOptions }: TutorialPageProps) {
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters.search || '');
-    const [jenis, setJenis] = useState(filters.jenis || '');
-
-    const submit = (payload: Record<string, string> = {}) => {
-        const params: Record<string, string> = {};
-        if (search) params.search = search;
-        if (jenis || payload.jenis !== undefined) {
-            const next = payload.jenis !== undefined ? payload.jenis : jenis;
-            if (next) params.jenis = next;
-        }
-        router.get('/tutorial', params, { preserveState: true, preserveScroll: true, replace: true });
-    };
+    const { filters, apply } = useFilter('/tutorial');
 
     const formatDurasi = (s: number | null) => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : null;
 
@@ -64,14 +53,8 @@ export default function Tutorial({ tutorials, filters, jenisOptions }: TutorialP
             <section className="mx-auto max-w-7xl px-4 py-10">
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row">
                     <SearchInput
-                        value={search}
-                        onSearch={(val) => {
-                            setSearch(val);
-                            const params: Record<string, string> = {};
-                            if (val) params.search = val;
-                            if (jenis) params.jenis = jenis;
-                            router.get('/tutorial', params, { preserveState: true, preserveScroll: true, replace: true });
-                        }}
+                        value={filters?.search ?? ''}
+                        onSearch={(val) => apply({ search: val })}
                         placeholder="Cari tutorial..."
                         className="flex-1"
                     />
@@ -79,7 +62,7 @@ export default function Tutorial({ tutorials, filters, jenisOptions }: TutorialP
 
                 <div className="mb-6 flex flex-wrap items-center gap-3">
                     <span className="text-sm text-slate-500 dark:text-slate-400">Jenis:</span>
-                    <FilterChips options={jenisOptions} value={jenis} onChange={(v) => { setJenis(v as string); submit({ jenis: v as string }); }} />
+                    <FilterChips options={jenisOptions} value={filters?.jenis ?? ''} onChange={(v) => apply({ jenis: v as string })} />
                 </div>
 
                 {loading ? (

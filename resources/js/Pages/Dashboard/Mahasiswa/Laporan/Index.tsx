@@ -1,16 +1,16 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Eye, Search } from 'lucide-react';
-import { useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
-import { Badge } from '../../../../Components/Badge';
-import { Button } from '../../../../Components/Button';
-import { Card } from '../../../../Components/Card';
-import { DataTable } from '../../../../Components/DataTable';
-import { Pagination } from '../../../../Components/Pagination';
-import { SearchInput } from '../../../../Components/SearchInput';
-import { Select } from '../../../../Components/Select';
-import { formatDate, formatRupiah } from '../../../../lib/date';
-import { statusPeminjamanMap as statusMap } from '../../../../lib/status';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
+import { Badge } from '@/Components/Badge';
+import { Button } from '@/Components/Button';
+import { Card } from '@/Components/Card';
+import { DataTable } from '@/Components/DataTable';
+import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
+import { Select } from '@/Components/Select';
+import { formatDate, formatRupiah } from '@/lib/date';
+import { statusPeminjamanMap as statusMap } from '@/lib/status';
 
 interface Peminjaman {
     id: number;
@@ -32,12 +32,9 @@ const statusOptions = [
 ];
 
 export default function Index() {
-    const { items, summary, filters } = usePage().props as any;
+    const { items, summary } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const base = '/dashboard/mahasiswa/laporan';
-
-    const apply = (params: Record<string, string>) => router.get(base, params, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter('/dashboard/mahasiswa/laporan');
 
     const columns = [
         { header: 'Kode', accessor: 'kode' as keyof Peminjaman },
@@ -95,8 +92,7 @@ export default function Index() {
             <Card>
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row">
                     <SearchInput
-                        value={search}
-                        onChange={(v) => setSearch(v)}
+                        value={filters?.search ?? ''}
                         onSearch={(val) => apply({ search: val })}
                         placeholder="Cari kode atau nama alat..."
                         className="flex-1"
@@ -104,10 +100,10 @@ export default function Index() {
                     <Select
                         options={statusOptions}
                         value={filters?.status ?? ''}
-                        onChange={(e) => apply({ status: e.target.value, search })}
+                        onChange={(e) => apply({ status: e.target.value })}
                         className="w-44"
                     />
-                    <Button onClick={() => apply({ search })} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
+                    <Button onClick={() => apply({})} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
                 </div>
                 <DataTable<Peminjaman>
                     isLoading={loading}

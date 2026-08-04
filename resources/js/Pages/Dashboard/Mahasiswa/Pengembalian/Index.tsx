@@ -1,15 +1,14 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Badge } from '../../../../Components/Badge';
-import { Card } from '../../../../Components/Card';
-import { FilterChips } from '../../../../Components/FilterChips';
-import { Input } from '../../../../Components/Input';
-import { Pagination } from '../../../../Components/Pagination';
-import { EmptyTable } from '../../../../Components/EmptyTable';
-import { router } from '@inertiajs/react';
-import { formatDate, formatRupiah } from '../../../../lib/date';
-import { statusPeminjamanMap as statusMap } from '../../../../lib/status';
+import { Badge } from '@/Components/Badge';
+import { Card } from '@/Components/Card';
+import { FilterChips } from '@/Components/FilterChips';
+import { SearchInput } from '@/Components/SearchInput';
+import { Pagination } from '@/Components/Pagination';
+import { EmptyTable } from '@/Components/EmptyTable';
+import { useFilter } from '@/Hooks/useFilter';
+import { formatDate, formatRupiah } from '@/lib/date';
+import { statusPeminjamanMap as statusMap } from '@/lib/status';
 
 const statusOptions = [
     { value: '', label: 'Semua' },
@@ -19,16 +18,8 @@ const statusOptions = [
 ];
 
 export default function Index() {
-    const { items, filters } = usePage().props as any;
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
-
-    useEffect(() => {
-        const t = setTimeout(() => {
-            router.get('/dashboard/mahasiswa/pengembalian', { search, status }, { preserveState: true, preserveScroll: true, replace: true });
-        }, 400);
-        return () => clearTimeout(t);
-    }, [search, status]);
+    const { items } = usePage().props as any;
+    const { filters, apply } = useFilter('/dashboard/mahasiswa/pengembalian');
 
     return (
         <>
@@ -40,14 +31,13 @@ export default function Index() {
             <Card>
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row">
                     <div className="relative flex-1">
-                        <Input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                        <SearchInput
+                            value={filters?.search ?? ''}
+                            onSearch={(v) => apply({ search: v })}
                             placeholder="Cari kode peminjaman..."
-                            leftIcon={<Search className="h-4 w-4" />}
                         />
                     </div>
-                    <FilterChips options={statusOptions} value={status} onChange={setStatus} />
+                    <FilterChips options={statusOptions} value={filters?.status ?? ''} onChange={(v) => apply({ status: v as string })} />
                 </div>
                 <div className="overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800/80">
                     <table className="w-full text-sm">

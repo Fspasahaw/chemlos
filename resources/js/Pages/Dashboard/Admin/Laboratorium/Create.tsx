@@ -1,4 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/Components/Button';
 import { FileUpload } from '@/Components/FileUpload';
@@ -27,6 +28,11 @@ export default function Create() {
         pengelola: [] as string[],
         pengelola_peran: [] as string[],
     });
+
+    useEffect(() => {
+        const lokasi = [data.gedung, data.lantai, data.ruangan].filter(Boolean).join(', ');
+        if (lokasi !== data.lokasi) setData('lokasi', lokasi);
+    }, [data.gedung, data.lantai, data.ruangan]);
 
     const toggleHari = (hari: string) => {
         setData('hari_operasional', data.hari_operasional.includes(hari) ? data.hari_operasional.filter((h) => h !== hari) : [...data.hari_operasional, hari]);
@@ -69,7 +75,7 @@ export default function Create() {
                 <div className="grid gap-4 md:grid-cols-2">
                     <Input label="Nama *" value={data.nama} onChange={(e) => setData('nama', e.target.value)} error={errors.nama} />
                     <Input label="Kode *" value={data.kode} onChange={(e) => setData('kode', e.target.value)} error={errors.kode} />
-                    <Input label="Lokasi *" value={data.lokasi} onChange={(e) => setData('lokasi', e.target.value)} error={errors.lokasi} />
+                    <Input label="Lokasi *" value={data.lokasi} disabled error={errors.lokasi} />
                     <Input label="Gedung" value={data.gedung} onChange={(e) => setData('gedung', e.target.value)} error={errors.gedung} />
                     <Input label="Lantai" value={data.lantai} onChange={(e) => setData('lantai', e.target.value)} error={errors.lantai} />
                     <Input label="Ruangan" value={data.ruangan} onChange={(e) => setData('ruangan', e.target.value)} error={errors.ruangan} />

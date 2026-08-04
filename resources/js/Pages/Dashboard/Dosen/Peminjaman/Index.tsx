@@ -1,17 +1,18 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { CheckCircle, Eye, Search, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
-import { Badge } from '../../../../Components/Badge';
-import { Button } from '../../../../Components/Button';
-import { DataTable } from '../../../../Components/DataTable';
-import { FilterChips } from '../../../../Components/FilterChips';
-import { Input } from '../../../../Components/Input';
-import { Pagination } from '../../../../Components/Pagination';
-import { Tooltip } from '../../../../Components/Tooltip';
+import { CheckCircle, Eye, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
+import { Badge } from '@/Components/Badge';
+import { Button } from '@/Components/Button';
+import { DataTable } from '@/Components/DataTable';
+import { FilterChips } from '@/Components/FilterChips';
+import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
+import { Tooltip } from '@/Components/Tooltip';
 import { Link } from '@inertiajs/react';
-import { formatDate } from '../../../../lib/date';
-import { statusPeminjamanMap as statusMap } from '../../../../lib/status';
+import { formatDate } from '@/lib/date';
+import { statusPeminjamanMap as statusMap } from '@/lib/status';
 
 interface Peminjaman {
     id: number;
@@ -31,19 +32,11 @@ const statusOptions = [
 ];
 
 export default function Index() {
-    const { items, filters } = usePage().props as any;
+    const { items } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
     const [rejectId, setRejectId] = useState<number | null>(null);
     const [alasan, setAlasan] = useState('');
-
-    useEffect(() => {
-        const t = setTimeout(() => {
-            router.get('/dashboard/dosen/peminjaman', { search, status }, { preserveState: true, preserveScroll: true, replace: true });
-        }, 400);
-        return () => clearTimeout(t);
-    }, [search, status]);
+    const { filters, apply } = useFilter('/dashboard/dosen/peminjaman');
 
     const approve = (p: Peminjaman) => router.post(`/dashboard/dosen/peminjaman/${p.id}/approve`, {}, { preserveScroll: true });
 
@@ -108,14 +101,13 @@ export default function Index() {
 
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative max-w-md flex-1">
-                    <Input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                    <SearchInput
+                        value={filters?.search ?? ''}
+                        onSearch={(v) => apply({ search: v })}
                         placeholder="Cari kode, mahasiswa, atau alat..."
-                        leftIcon={<Search className="h-4 w-4" />}
                     />
                 </div>
-                <FilterChips options={statusOptions} value={status} onChange={setStatus} />
+                <FilterChips options={statusOptions} value={filters?.status ?? ''} onChange={(v) => apply({ status: v as string })} />
             </div>
 
             <DataTable<Peminjaman>

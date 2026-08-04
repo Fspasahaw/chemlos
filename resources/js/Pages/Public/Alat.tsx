@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { FlaskConical, Grid3X3, Home, List, Search, SearchX } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '../../Components/Badge';
@@ -11,6 +11,7 @@ import { SearchInput } from '../../Components/SearchInput';
 import { Select } from '../../Components/Select';
 import { SkeletonCard } from '../../Components/Skeleton';
 import { Tooltip } from '../../Components/Tooltip';
+import { useFilter } from '../../Hooks/useFilter';
 import { usePageLoading } from '../../Hooks/usePageLoading';
 import { alatStatusMap } from '../../lib/status';
 
@@ -48,42 +49,14 @@ const statusVariant = (status: string) => {
     }
 };
 
-export default function Alat({ alat, filters, laboratoriumOptions, kategoriOptions, statusOptions, kondisiOptions }: AlatPageProps) {
+export default function Alat({ alat, laboratoriumOptions, kategoriOptions, statusOptions, kondisiOptions }: AlatPageProps) {
     const { features } = usePage().props as any;
     const isEnabled = (key: string) => !!features?.[key];
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters.search || '');
-    const [labFilter, setLabFilter] = useState(filters.laboratorium || '');
-    const [kategoriFilter, setKategoriFilter] = useState(filters.kategori || '');
-    const [statusFilter, setStatusFilter] = useState(filters.status || '');
-    const [kondisiFilter, setKondisiFilter] = useState(filters.kondisi || '');
-    const [sort, setSort] = useState(filters.sort || 'terbaru');
     const [view, setView] = useState<'grid' | 'list'>('grid');
+    const { filters, apply } = useFilter('/alat');
 
-    const applyFilters = (payload: Record<string, string> = {}) => {
-        const nextSearch = payload.search !== undefined ? payload.search : search;
-        const nextLab = payload.laboratorium !== undefined ? payload.laboratorium : labFilter;
-        const nextKategori = payload.kategori !== undefined ? payload.kategori : kategoriFilter;
-        const nextStatus = payload.status !== undefined ? payload.status : statusFilter;
-        const nextKondisi = payload.kondisi !== undefined ? payload.kondisi : kondisiFilter;
-        const nextSort = payload.sort !== undefined ? payload.sort : sort;
-
-        const params: Record<string, string> = {};
-        if (nextSearch) params.search = nextSearch;
-        if (nextLab) params.laboratorium = nextLab;
-        if (nextKategori) params.kategori = nextKategori;
-        if (nextStatus) params.status = nextStatus;
-        if (nextKondisi) params.kondisi = nextKondisi;
-        if (nextSort && nextSort !== 'terbaru') params.sort = nextSort;
-
-        router.get('/alat', params, { preserveState: true, preserveScroll: true, replace: true });
-    };
-
-
-    const reset = () => {
-        setSearch(''); setLabFilter(''); setKategoriFilter(''); setStatusFilter(''); setKondisiFilter(''); setSort('terbaru');
-        router.get('/alat', {}, { preserveState: true, preserveScroll: true, replace: true });
-    };
+    const reset = () => apply({ search: '', laboratorium: '', kategori: '', status: '', kondisi: '', sort: '' });
 
     const photoUrl = (path: string | null) => (path ? `/storage/${path}` : null);
 
@@ -105,14 +78,13 @@ export default function Alat({ alat, filters, laboratoriumOptions, kategoriOptio
             <section className="mx-auto max-w-7xl px-4 py-10">
                 <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
                     <SearchInput
-                        value={search}
-                        onChange={(v) => setSearch(v)}
-                        onSearch={(val) => applyFilters({ search: val })}
+                        value={filters?.search ?? ''}
+                        onSearch={(val) => apply({ search: val })}
                         placeholder="Cari alat..."
                         className="flex-1"
                     />
                     <div className="flex items-center gap-2">
-                        <Button onClick={() => applyFilters()} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
+                        <Button onClick={() => apply({})} leftIcon={<Search className="h-4 w-4" />}>Cari</Button>
                         <Tooltip content={view === 'grid' ? 'Tampilan List' : 'Tampilan Grid'}>
                             <button onClick={() => setView(view === 'grid' ? 'list' : 'grid')} className="rounded-lg border border-slate-300 bg-white p-2.5 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" aria-label={view === 'grid' ? 'Tampilan List' : 'Tampilan Grid'}>
                                 {view === 'grid' ? <List className="h-5 w-5" /> : <Grid3X3 className="h-5 w-5" />}
@@ -124,19 +96,19 @@ export default function Alat({ alat, filters, laboratoriumOptions, kategoriOptio
                 <div className="mb-6 flex flex-col gap-4">
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Laboratorium:</span>
-                        <FilterChips options={laboratoriumOptions} value={labFilter} onChange={(v) => { setLabFilter(v as string); applyFilters({ laboratorium: v as string }); }} />
+                        <FilterChips options={laboratoriumOptions} value={filters?.laboratorium ?? ''} onChange={(v) => apply({ laboratorium: v as string })} />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Kategori:</span>
-                        <FilterChips options={kategoriOptions} value={kategoriFilter} onChange={(v) => { setKategoriFilter(v as string); applyFilters({ kategori: v as string }); }} />
+                        <FilterChips options={kategoriOptions} value={filters?.kategori ?? ''} onChange={(v) => apply({ kategori: v as string })} />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Status:</span>
-                        <FilterChips options={statusOptions} value={statusFilter} onChange={(v) => { setStatusFilter(v as string); applyFilters({ status: v as string }); }} />
+                        <FilterChips options={statusOptions} value={filters?.status ?? ''} onChange={(v) => apply({ status: v as string })} />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Kondisi:</span>
-                        <FilterChips options={kondisiOptions} value={kondisiFilter} onChange={(v) => { setKondisiFilter(v as string); applyFilters({ kondisi: v as string }); }} />
+                        <FilterChips options={kondisiOptions} value={filters?.kondisi ?? ''} onChange={(v) => apply({ kondisi: v as string })} />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Urutkan:</span>
@@ -146,8 +118,8 @@ export default function Alat({ alat, filters, laboratoriumOptions, kategoriOptio
                                 { value: 'nama', label: 'Nama' },
                                 { value: 'tersedia', label: 'Stok Tersedia' },
                             ]}
-                            value={sort}
-                            onChange={(e) => { setSort(e.target.value); applyFilters({ sort: e.target.value }); }}
+                            value={filters?.sort || 'terbaru'}
+                            onChange={(e) => apply({ sort: e.target.value === 'terbaru' ? '' : e.target.value })}
                             className="w-44"
                         />
                     </div>

@@ -1,14 +1,15 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CheckCircle, Eye, Pencil, Plus, RotateCcw, Search, ShieldAlert, Trash2, UserCog, XCircle } from 'lucide-react';
+import { CheckCircle, Eye, Pencil, Plus, RotateCcw, ShieldAlert, Trash2, UserCog, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { usePageLoading } from '../../../../Hooks/usePageLoading';
+import { useFilter } from '@/Hooks/useFilter';
+import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { DataTable } from '@/Components/DataTable';
 import { FilterChips } from '@/Components/FilterChips';
-import { Input } from '@/Components/Input';
 import Modal from '@/Components/Modal';
 import { Pagination } from '@/Components/Pagination';
+import { SearchInput } from '@/Components/SearchInput';
 import { TableActions } from '@/Components/TableActions';
 import { useLang } from '@/Providers/LanguageProvider';
 import { formatDate } from '@/lib/date';
@@ -50,19 +51,15 @@ const statusLabelMap: Record<string, string> = {
 
 export default function Index() {
     const { t } = useLang();
-    const { items, filters, roles } = usePage().props as any;
+    const { items, roles } = usePage().props as any;
     const loading = usePageLoading();
-    const [search, setSearch] = useState(filters?.search ?? '');
-    const [status, setStatus] = useState(filters?.status ?? '');
-    const [role, setRole] = useState(filters?.role ?? '');
     const [loadingId, setLoadingId] = useState<number | null>(null);
     const [roleModal, setRoleModal] = useState<UserItem | null>(null);
     const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
     const [rejectModal, setRejectModal] = useState<UserItem | null>(null);
     const [rejectReason, setRejectReason] = useState('');
     const base = '/dashboard/admin/users';
-
-    const cari = (term?: string) => router.get(base, { search: term ?? search, status, role }, { preserveState: true, preserveScroll: true, replace: true });
+    const { filters, apply } = useFilter(base);
 
     const action = (url: string, userId: number, payload: Record<string, any> = {}) => {
         setLoadingId(userId);
@@ -209,26 +206,24 @@ export default function Index() {
 
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <Input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && cari()}
+                    <SearchInput
+                        value={filters?.search ?? ''}
+                        onSearch={(v) => apply({ search: v })}
                         placeholder="Cari nama/email/NPM..."
-                        leftIcon={<Search className="h-4 w-4" />}
                         className="max-w-sm"
                     />
-                    <Button onClick={cari} size="md">{t('Cari', 'Search')}</Button>
+                    <Button onClick={() => apply({})} size="md">{t('Cari', 'Search')}</Button>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <FilterChips
                         options={statusOptions}
-                        value={status}
-                        onChange={(v) => { setStatus(v as string); router.get(base, { search, status: v, role }, { preserveState: true, preserveScroll: true, replace: true }); }}
+                        value={filters?.status ?? ''}
+                        onChange={(v) => apply({ status: v as string })}
                     />
                     <FilterChips
                         options={[{ value: '', label: 'Semua Role' }, ...roleOptions]}
-                        value={role}
-                        onChange={(v) => { setRole(v as string); router.get(base, { search, status, role: v }, { preserveState: true, preserveScroll: true, replace: true }); }}
+                        value={filters?.role ?? ''}
+                        onChange={(v) => apply({ role: v as string })}
                     />
                 </div>
             </div>

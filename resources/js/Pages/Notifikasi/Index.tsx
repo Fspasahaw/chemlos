@@ -2,13 +2,13 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Bell, Check, SearchX } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { useEffect, useState } from 'react';
-import { Badge } from '../../Components/Badge';
-import { DatePicker } from '../../Components/DatePicker';
-import { EmptyState } from '../../Components/EmptyState';
-import { FilterChips } from '../../Components/FilterChips';
-import { Pagination } from '../../Components/Pagination';
-import { Select } from '../../Components/Select';
+import { Badge } from '@/Components/Badge';
+import { DatePicker } from '@/Components/DatePicker';
+import { EmptyState } from '@/Components/EmptyState';
+import { FilterChips } from '@/Components/FilterChips';
+import { Pagination } from '@/Components/Pagination';
+import { Select } from '@/Components/Select';
+import { useFilter } from '@/Hooks/useFilter';
 
 interface Notif {
     id: number;
@@ -43,20 +43,8 @@ interface PageProps {
 }
 
 export default function Index() {
-    const { items, unread_count, filters, filterOptions } = usePage().props as unknown as PageProps;
-    const [localFilters, setLocalFilters] = useState(filters);
-
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            router.get('/notifikasi', localFilters as Record<string, string>, {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }, 300);
-
-        return () => clearTimeout(timeout);
-    }, [localFilters]);
+    const { items, unread_count, filterOptions } = usePage().props as unknown as PageProps;
+    const { filters, apply } = useFilter('/notifikasi');
 
     const relativeTime = (value: string) => {
         try {
@@ -121,26 +109,26 @@ export default function Index() {
                     <Select
                         label="Jenis Notifikasi"
                         options={jenisOptions}
-                        value={localFilters.jenis}
-                        onChange={(e) => setLocalFilters((f) => ({ ...f, jenis: e.target.value }))}
+                        value={filters?.jenis ?? ''}
+                        onChange={(e) => apply({ jenis: e.target.value })}
                     />
                     <div className="md:col-span-2">
                         <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Status</label>
                         <FilterChips
                             options={filterOptions.status}
-                            value={localFilters.status}
-                            onChange={(value) => setLocalFilters((f) => ({ ...f, status: value as string }))}
+                            value={filters?.status ?? ''}
+                            onChange={(value) => apply({ status: value as string })}
                         />
                     </div>
                     <DatePicker
                         label="Dari Tanggal"
-                        value={localFilters.dari}
-                        onChange={(e) => setLocalFilters((f) => ({ ...f, dari: e.target.value }))}
+                        value={filters?.dari ?? ''}
+                        onChange={(e) => apply({ dari: e.target.value })}
                     />
                     <DatePicker
                         label="Sampai Tanggal"
-                        value={localFilters.sampai}
-                        onChange={(e) => setLocalFilters((f) => ({ ...f, sampai: e.target.value }))}
+                        value={filters?.sampai ?? ''}
+                        onChange={(e) => apply({ sampai: e.target.value })}
                     />
                 </div>
             </div>
@@ -154,7 +142,7 @@ export default function Index() {
                         action={
                             <button
                                 type="button"
-                                onClick={() => setLocalFilters({ jenis: '', status: '', dari: '', sampai: '' })}
+                                onClick={() => apply({ jenis: '', status: '', dari: '', sampai: '' })}
                                 className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
                             >
                                 Reset Filter
@@ -189,15 +177,15 @@ export default function Index() {
                                     <button
                                         type="button"
                                         onClick={() => markAsRead(n)}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
+                                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                                     >
-                                        <Check className="h-3.5 w-3.5" /> Tandai Dibaca
+                                        Tandai Dibaca
                                     </button>
                                 )}
                                 {n.link && (
                                     <Link
                                         href={n.link}
-                                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+                                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-700"
                                     >
                                         Lihat Detail
                                     </Link>
@@ -208,7 +196,9 @@ export default function Index() {
                 )}
             </div>
 
-            <Pagination links={items.links} from={items.from} to={items.to} total={items.total} />
+            <div className="mt-6">
+                <Pagination links={items.links} from={items.from} to={items.to} total={items.total} />
+            </div>
         </>
     );
 }
