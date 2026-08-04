@@ -164,8 +164,9 @@ jobs:
 
             cd "$APP_DIR"
 
-            # Storage link
-            $PHP_BIN artisan storage:link --force
+            # Storage link (gunakan shell ln karena beberapa hosting menonaktifkan fungsi PHP symlink/exec)
+            rm -rf public/storage
+            ln -sfn "$APP_DIR/storage/app/public" "$APP_DIR/public/storage"
 
             # Database migrasi + seeder pengaturan
             $PHP_BIN artisan migrate --force
