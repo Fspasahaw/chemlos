@@ -33,9 +33,13 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+        env:
+          NPM_CONFIG_IGNORE_SCRIPTS: false
 
       - name: Build frontend
         run: npm run build
+        env:
+          NPM_CONFIG_IGNORE_SCRIPTS: false
 
       - name: Generate application key
         run: php artisan key:generate

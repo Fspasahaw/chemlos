@@ -47,11 +47,13 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm run build
+        env:
+          NPM_CONFIG_IGNORE_SCRIPTS: false
 
       - name: Package application
         run: |
-          tar -czf chemlos-deploy.tar.gz \
-            --exclude='chemlos-deploy.tar.gz' \
+          TMP_ARCHIVE=$(mktemp -t chemlos-deploy.XXXXXX.tar.gz)
+          tar -czf "$TMP_ARCHIVE" \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='.gitignore' \
@@ -62,16 +64,17 @@ jobs:
             --exclude='.env' \
             --exclude='.env.production.example' \
             --exclude='.env.testing' \
-            --exclude='storage/app/public/*' \
-            --exclude='storage/app/private/*' \
-            --exclude='storage/app/backups/*' \
-            --exclude='storage/framework/cache/data/*' \
+            --exclude='storage/app/public' \
+            --exclude='storage/app/private' \
+            --exclude='storage/app/backups' \
+            --exclude='storage/framework/cache/data' \
             --exclude='storage/framework/cache/laravel-excel' \
-            --exclude='storage/framework/sessions/*' \
-            --exclude='storage/framework/views/*' \
-            --exclude='storage/framework/testing/*' \
-            --exclude='storage/logs/*' \
+            --exclude='storage/framework/sessions' \
+            --exclude='storage/framework/views' \
+            --exclude='storage/framework/testing' \
+            --exclude='storage/logs' \
             .
+          mv "$TMP_ARCHIVE" chemlos-deploy.tar.gz
 
       - name: Upload archive and environment to Hostinger
         uses: appleboy/scp-action@v1
