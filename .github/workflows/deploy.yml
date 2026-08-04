@@ -46,9 +46,13 @@ jobs:
       - name: Build frontend
         run: |
           npm ci --no-audit --no-fund
-          npm run build
-        env:
-          NPM_CONFIG_IGNORE_SCRIPTS: false
+          rm -rf public/build
+          npx vite build
+
+      - name: Verify Vite build
+        run: |
+          ls -la public/build
+          test -f public/build/manifest.json
 
       - name: Package application
         run: |
