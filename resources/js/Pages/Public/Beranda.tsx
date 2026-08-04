@@ -109,7 +109,7 @@ export default function Beranda({ appName, stats, labs, events, labOptions, stat
                             {appName}
                         </h1>
                         <p className="mx-auto mb-8 max-w-2xl text-lg text-white/90 md:text-2xl lg:mx-0">
-                            {t('Chemical Laboratory Online System — Sistem Manajemen Inventaris dan Peminjaman Alat Laboratorium Terintegrasi', 'Chemical Laboratory Online System — Integrated Inventory and Laboratory Equipment Lending Management System')}
+                            {t('Chemical Laboratory Online System — Sistem Manajemen Inventaris, Peminjaman, Pengembalian, dan Pemeliharaan Alat Laboratorium Terintegrasi', 'Chemical Laboratory Online System — Integrated Inventory, Borrowing, Returning, and Maintenance Management System for Laboratory Equipment')}
                         </p>
                         <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
                             <Link

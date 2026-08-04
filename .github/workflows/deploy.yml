@@ -115,7 +115,7 @@ jobs:
             BACKUP_DIR="$REMOTE_BASE/chemlos-backup-$(date +%s)"
             if [ -d "$APP_DIR" ]; then
               mkdir -p "$BACKUP_DIR"
-              [ -d "$APP_DIR/storage/app" ] && cp -a "$APP_DIR/storage/app" "$BACKUP_DIR/" || true
+              [ -d "$APP_DIR/storage/app" ] && mkdir -p "$BACKUP_DIR/storage" && cp -a "$APP_DIR/storage/app" "$BACKUP_DIR/storage/" || true
               [ -f "$APP_DIR/.env" ] && cp -a "$APP_DIR/.env" "$BACKUP_DIR/.env" || true
             fi
 

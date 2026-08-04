@@ -23,9 +23,12 @@ export default function Tentang({ tentang }: TentangProps) {
     ];
 
     const milestones = [
-        { tahun: '2026', title: 'Perencanaan & Desain', desc: 'Mendesain arsitektur ChemLOS, melakukan analisis kebutuhan peminjaman alat, merancang database, dan menetapkan alur persetujuan berbasis peran.' },
+        { tahun: '2026', title: 'Ideasi & Validasi', desc: 'Mengidentifikasi pain point peminjaman alat laboratorium dan memvalidasi kebutuhan bersama civitas akademika FTUI.' },
+        { tahun: '2026', title: 'Perencanaan & Desain', desc: 'Mendesain arsitektur ChemLOS, merancang database, menetapkan alur persetujuan berbasis peran, dan membuat prototype antarmuka.' },
         { tahun: '2026', title: 'Pengembangan Inti', desc: 'Mengimplementasikan manajemen alat, laboratorium, peminjaman multi-peran, notifikasi real-time, pelacakan kerusakan, dan dashboard analytics.' },
+        { tahun: '2026', title: 'Integrasi & Pengujian', desc: 'Menguji alur peminjaman end-to-end, memperbaiki bug, dan mengintegrasikan laporan, audit log, serta kalender real-time.' },
         { tahun: '2026', title: 'Pilot & Launch', desc: 'Melakukan uji coba pilot di lingkungan Departemen Teknik Kimia FTUI, menyempurnakan UX, dan meluncurkan resmi untuk civitas akademika.' },
+        { tahun: '2026', title: 'Pengembangan Berkelanjutan', desc: 'Menerima umpan balik pengguna, menambahkan fitur pemeliharaan, kerusakan, QR code, dan laporan otomatis.' },
     ];
 
     return (
@@ -45,19 +48,23 @@ export default function Tentang({ tentang }: TentangProps) {
 
             <section className="mx-auto max-w-5xl px-4 py-16">
                 <div className="grid gap-8 md:grid-cols-2">
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 dark:border-slate-800/80 dark:bg-slate-900">
+                    <div className="flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white p-6 dark:border-slate-800/80 dark:bg-slate-900">
                         <Target className="mb-4 h-8 w-8 text-indigo-600" />
                         <h2 className="text-xl font-bold">Visi</h2>
-                        <p className="mt-2 text-slate-500 dark:text-slate-400">{visi}</p>
+                        <div className="flex-1">
+                            <p className="mt-2 text-slate-500 dark:text-slate-400">{visi}</p>
+                        </div>
                     </div>
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 dark:border-slate-800/80 dark:bg-slate-900">
+                    <div className="flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white p-6 dark:border-slate-800/80 dark:bg-slate-900">
                         <Lightbulb className="mb-4 h-8 w-8 text-indigo-600" />
                         <h2 className="text-xl font-bold">Misi</h2>
-                        <ol className="mt-2 list-decimal space-y-2 pl-5 text-slate-500 dark:text-slate-400">
-                            {misi.split(/\n+/).filter(Boolean).map((item, i) => (
-                                <li key={i} className="pl-2 text-sm leading-relaxed">{item.replace(/^\d+\.\s*/, '').trim()}</li>
-                            ))}
-                        </ol>
+                        <div className="flex-1">
+                            <ol className="mt-2 list-decimal space-y-2 pl-5 text-slate-500 dark:text-slate-400">
+                                {misi.split(/\n+/).filter(Boolean).map((item, i) => (
+                                    <li key={i} className="pl-2 text-sm leading-relaxed">{item.replace(/^\d+\.\s*/, '').trim()}</li>
+                                ))}
+                            </ol>
+                        </div>
                     </div>
                 </div>
 
@@ -76,19 +83,21 @@ export default function Tentang({ tentang }: TentangProps) {
                     </div>
                 </div>
 
-                <div className="mt-16">
-                    <h2 className="mb-8 text-center text-2xl font-bold">Perjalanan Kami</h2>
+                <div className="mx-auto mt-16 max-w-3xl">
+                    <h2 className="mb-12 text-center text-2xl font-bold">Perjalanan Kami</h2>
                     <div className="relative">
-                        <div className="absolute top-8 left-0 hidden h-0.5 w-full bg-indigo-100 dark:bg-indigo-900/30 md:block" />
-                        <div className="grid gap-6 sm:grid-cols-3">
-                            {milestones.map((m, i) => (
-                                <div key={i} className="relative text-center">
-                                    <span className="relative z-10 mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-md">{m.tahun}</span>
-                                    <h3 className="mt-4 font-semibold text-slate-900 dark:text-slate-100">{m.title}</h3>
-                                    <p className="mx-auto mt-1 max-w-xs text-sm text-slate-500 dark:text-slate-400">{m.desc}</p>
+                        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-indigo-200 dark:bg-indigo-800" />
+                        {milestones.map((m, i) => (
+                            <div key={i} className="relative mb-10 flex gap-6 last:mb-0">
+                                <div className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-lg ring-4 ring-white dark:ring-slate-900">
+                                    {m.tahun}
                                 </div>
-                            ))}
-                        </div>
+                                <div className="flex-1 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-800/80 dark:bg-slate-900">
+                                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{m.title}</h3>
+                                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{m.desc}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

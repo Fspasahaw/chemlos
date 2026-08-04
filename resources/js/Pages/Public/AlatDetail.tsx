@@ -81,13 +81,6 @@ export default function AlatDetail({ alat, relatedAlats, events, history, status
         }
     };
 
-    const historyIcon = (type: string) => {
-        switch (type) {
-            case 'peminjaman': return <span className="rounded-full bg-indigo-100 p-2 text-indigo-600 dark:bg-indigo-900/20"><CalendarIcon className="h-4 w-4" /></span>;
-            case 'kerusakan': return <span className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-900/20"><Wrench className="h-4 w-4" /></span>;
-            default: return <span className="rounded-full bg-amber-100 p-2 text-amber-600 dark:bg-amber-900/20"><Wrench className="h-4 w-4" /></span>;
-        }
-    };
 
     return (
         <>
@@ -292,16 +285,24 @@ export default function AlatDetail({ alat, relatedAlats, events, history, status
                                 {history.length === 0 ? (
                                     <p className="text-slate-500 dark:text-slate-400">Belum ada riwayat.</p>
                                 ) : (
-                                    <div className="relative space-y-6 border-l-2 border-slate-200 pl-6 dark:border-slate-700">
+                                    <div className="relative pl-12">
+                                        <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
                                         {history.map((h, idx) => {
                                             const statusLabel =
                                                 h.type === 'peminjaman' ? statusPeminjamanMap[h.status]?.label ?? h.status :
                                                 h.type === 'kerusakan' ? statusKerusakanMap[h.status]?.label ?? h.status :
                                                 h.type === 'maintenance' ? statusMaintenanceMap[h.status]?.label ?? h.status :
                                                 h.status;
+                                            const Icon = h.type === 'peminjaman' ? CalendarIcon : h.type === 'kerusakan' ? Wrench : Wrench;
+                                            const iconClass =
+                                                h.type === 'peminjaman' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300' :
+                                                h.type === 'kerusakan' ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-300' :
+                                                'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-300';
                                             return (
-                                                <div key={idx} className="relative">
-                                                    <span className="absolute -left-7.75 top-0">{historyIcon(h.type)}</span>
+                                                <div key={idx} className="relative mb-8 last:mb-0">
+                                                    <span className={`absolute -left-12 top-0 flex h-10 w-10 items-center justify-center rounded-full ${iconClass}`}>
+                                                        <Icon className="h-5 w-5" />
+                                                    </span>
                                                     <p className="text-sm font-semibold">{h.title}</p>
                                                     <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(h.date)}{h.end ? ` - ${formatDate(h.end)}` : ''} &bull; {statusLabel}</p>
                                                     {h.description && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{h.description}</p>}
