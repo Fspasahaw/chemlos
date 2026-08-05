@@ -11,7 +11,7 @@ export default function GuestLayout({ children }: { children: React.ReactNode })
     const { resolvedTheme, setTheme } = useTheme();
     const { lang, setLang, t } = useLang();
     const reducedMotion = useReducedMotion();
-    const { auth } = usePage().props as any;
+    const { auth, settings } = usePage().props as any;
 
     useEffect(() => {
         if (!auth?.user && typeof window !== 'undefined') {
@@ -78,11 +78,16 @@ export default function GuestLayout({ children }: { children: React.ReactNode })
                 </div>
             </div>
 
-            <div className="flex flex-1 items-center justify-center px-4 py-8 md:px-8">
-                <FlashToast />
-                <div className={`w-full max-w-md rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-2xl backdrop-blur dark:border-slate-700/50 dark:bg-slate-900/90 ${reducedMotion ? '' : 'animate-fade-in-up'}`}>
-                    {children}
+            <div className="flex flex-1 flex-col">
+                <div className="flex flex-1 items-center justify-center px-4 py-8 md:px-8">
+                    <FlashToast />
+                    <div className={`w-full max-w-md rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-2xl backdrop-blur dark:border-slate-700/50 dark:bg-slate-900/90 ${reducedMotion ? '' : 'animate-fade-in-up'}`}>
+                        {children}
+                    </div>
                 </div>
+                <footer className="border-t border-slate-200/80 bg-white/95 py-4 text-center text-xs text-slate-400 dark:border-slate-800/80 dark:bg-slate-900/95 dark:text-slate-500">
+                    &copy; {new Date().getFullYear()} {settings?.['umum.nama_institusi'] || 'Departemen Teknik Kimia, Fakultas Teknik, Universitas Indonesia'}. {t('Chemical Laboratory Online System.', 'Chemical Laboratory Online System.')}
+                </footer>
             </div>
         </div>
     );

@@ -38,7 +38,7 @@ import { useTheme } from '../Providers/ThemeProvider';
 import { useState } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const { auth } = usePage().props as any;
+    const { auth, settings } = usePage().props as any;
     const { resolvedTheme, setTheme } = useTheme();
     const { lang, setLang, t } = useLang();
     const reducedMotion = useReducedMotion();
@@ -250,7 +250,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </nav>
             </aside>
 
-            <div className="flex-1 pb-20 md:pb-0">
+            <div className="flex flex-1 flex-col pb-20 md:pb-0">
                 <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/80 px-4 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/80 md:px-6">
                     <button onClick={() => setOpen(!open)} className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden" aria-label="Menu">
                         <Menu className="h-5 w-5" />
@@ -280,9 +280,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                 </header>
                 <FlashToast />
-                <main key={url} className={`p-4 md:p-6 ${reducedMotion ? '' : 'animate-fade-in-up'}`}>
+                <main key={url} className={`flex flex-1 flex-col p-4 md:p-6 ${reducedMotion ? '' : 'animate-fade-in-up'}`}>
                     <DashboardBreadcrumb />
-                    {children}
+                    <div className="flex-1 min-h-0">{children}</div>
+                    <footer className="mt-6 border-t border-slate-200/80 pt-6 text-center text-xs text-slate-400 dark:border-slate-800/80 dark:text-slate-500">
+                        &copy; {new Date().getFullYear()} {settings?.['umum.nama_institusi'] || 'Departemen Teknik Kimia, Fakultas Teknik, Universitas Indonesia'}. {t('Chemical Laboratory Online System.', 'Chemical Laboratory Online System.')}
+                    </footer>
                 </main>
 
                 <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200/80 bg-white/95 px-2 pb-safe pt-1 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/95 md:hidden">

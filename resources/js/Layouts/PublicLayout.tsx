@@ -251,7 +251,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                         </div>
                     </div>
                     <div className="mt-10 border-t border-slate-200/80 pt-6 text-center text-xs text-slate-400 dark:border-slate-800/80 dark:text-slate-500">
-                        &copy; {new Date().getFullYear()} {settings?.['umum.nama_institusi'] || 'ChemLOS'}. {t('Chemical Laboratory Online System.', 'Chemical Laboratory Online System.')}
+                        &copy; {new Date().getFullYear()} {settings?.['umum.nama_institusi'] || 'Departemen Teknik Kimia, Fakultas Teknik, Universitas Indonesia'}. {t('Chemical Laboratory Online System.', 'Chemical Laboratory Online System.')}
                     </div>
                 </div>
             </footer>
