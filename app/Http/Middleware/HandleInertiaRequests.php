@@ -3,13 +3,33 @@
 namespace App\Http\Middleware;
 
 use App\Models\Pengaturan;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
+use Inertia\Support\Header;
 
 class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
+
+    public function handle(Request $request, Closure $next)
+    {
+        $response = parent::handle($request, $next);
+
+        // Hostinger CDN (hcdn) tidak menghormati Vary: X-Inertia;
+        // header Vary yang tersisa hanya Accept-Encoding. Akibatnya
+        // browser dapat menyajikan respons JSON Inertia sebagai halaman
+        // normal saat session restore. Paksa no-store untuk semua
+        // permintaan Inertia agar JSON tidak pernah masuk cache.
+        if ($request->header(Header::INERTIA)) {
+            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+            $response->headers->set('Pragma', 'no-cache');
+            $response->headers->remove('Expires');
+        }
+
+        return $response;
+    }
 
     public function version(Request $request): ?string
     {
