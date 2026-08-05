@@ -26,6 +26,7 @@ class PengaturanSeeder extends Seeder
             // Branding
             ['grup' => 'branding', 'key' => 'logo_aplikasi', 'value' => ''],
             ['grup' => 'branding', 'key' => 'favicon', 'value' => ''],
+            ['grup' => 'branding', 'key' => 'logo_departemen', 'value' => ''],
             ['grup' => 'branding', 'key' => 'primary_color', 'value' => '#4f46e5'],
             ['grup' => 'branding', 'key' => 'secondary_color', 'value' => '#7c3aed'],
 

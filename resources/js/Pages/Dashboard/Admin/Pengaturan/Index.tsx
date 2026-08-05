@@ -106,13 +106,13 @@ export default function Index() {
     const { settings } = usePage().props as any;
     const [active, setActive] = useState('umum');
     const [values, setValues] = useState<Record<string, any>>(settings as Record<string, any>);
-    const [files, setFiles] = useState<{ logo?: File; favicon?: File }>({});
+    const [files, setFiles] = useState<{ logo?: File; favicon?: File; logo_departemen?: File }>({});
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         setValues((prev: any) => ({
             ...prev,
-            branding: { logo_aplikasi: '', favicon: '', ...(prev?.branding ?? {}) },
+            branding: { logo_aplikasi: '', favicon: '', logo_departemen: '', ...(prev?.branding ?? {}) },
         }));
     }, []);
 
@@ -125,6 +125,7 @@ export default function Index() {
         if (active === 'branding') {
             if (files.logo) data.append('logo_aplikasi', files.logo);
             if (files.favicon) data.append('favicon', files.favicon);
+            if (files.logo_departemen) data.append('logo_departemen', files.logo_departemen);
         }
         router.post('/dashboard/admin/pengaturan', data, { forceFormData: true, onFinish: () => setLoading(false) });
     };
@@ -141,13 +142,14 @@ export default function Index() {
         if (active === 'notifikasi' && k.startsWith('template_')) {
             return <Textarea key={k} label={labelize(k)} value={value} onChange={(e) => setVal(k, e.target.value)} rows={3} />;
         }
-        if (k === 'logo_aplikasi' || k === 'favicon') {
+        if (['logo_aplikasi', 'favicon', 'logo_departemen'].includes(k)) {
+            const fileKey = k === 'logo_aplikasi' ? 'logo' : k;
             return (
                 <FileUpload
                     key={k}
                     label={labelize(k)}
-                    value={files[k === 'logo_aplikasi' ? 'logo' : 'favicon'] ?? value}
-                    onChange={(file) => setFiles((prev) => ({ ...prev, [k === 'logo_aplikasi' ? 'logo' : 'favicon']: file ?? undefined }))}
+                    value={files[fileKey as keyof typeof files] ?? value}
+                    onChange={(file) => setFiles((prev) => ({ ...prev, [fileKey]: file ?? undefined }))}
                 />
             );
         }

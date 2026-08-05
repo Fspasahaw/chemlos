@@ -191,7 +191,11 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                     <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <div className="flex items-center gap-2 font-bold text-lg">
-                                <FlaskConical className="h-6 w-6 text-indigo-600" />
+                                {settings?.['branding.logo_departemen'] ? (
+                                    <ImageWithFallback src={`/storage/${settings['branding.logo_departemen']}`} alt="Logo Departemen" className="h-10 w-auto object-contain" />
+                                ) : (
+                                    <FlaskConical className="h-6 w-6 text-indigo-600" />
+                                )}
                                 <span className="bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">ChemLOS</span>
                             </div>
                             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{settings?.['umum.deskripsi_aplikasi'] || t('Sistem manajemen laboratorium terintegrasi.', 'Integrated laboratory management system.')}</p>
@@ -211,6 +215,20 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                                 <li>+{settings?.['umum.nomor_whatsapp_admin'] || '—'}</li>
                                 <li>{settings?.['umum.alamat_institusi'] ? (settings['umum.alamat_institusi'] as string).split(',')[0] : '—'}</li>
                             </ul>
+                            {settings?.['umum.alamat_institusi'] && (
+                                <div className="mt-4 aspect-[16/9] overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+                                    <iframe
+                                        title="Lokasi Departemen Teknik Kimia FTUI"
+                                        width="100%"
+                                        height="100%"
+                                        style={{ border: 0 }}
+                                        loading="lazy"
+                                        allowFullScreen
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        src="https://www.google.com/maps?q=Departemen+Teknik+Kimia+FTUI&output=embed"
+                                    />
+                                </div>
+                            )}
                         </div>
                         <div>
                             <h3 className="font-semibold">{t('Legal', 'Legal')}</h3>

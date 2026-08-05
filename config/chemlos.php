@@ -18,6 +18,6 @@ return [
         'kontak' => false,
         'pesan_kontak' => false,
         'cadangan' => false,
-        'pengaturan' => false,
+        'pengaturan' => true,
     ],
 ];

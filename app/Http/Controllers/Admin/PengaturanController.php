@@ -52,6 +52,13 @@ class PengaturanController extends Controller
                 'template_email_peminjaman_selesai' => "Yth. {{nama}},\n\nPeminjaman {{kode}} telah selesai. Terima kasih atas pengembalian alat tepat waktu.",
                 'template_whatsapp_pengingat' => "Halo {{nama}}, jangan lupa mengembalikan alat peminjaman {{kode}} sebelum {{batas}}.",
             ],
+            'branding' => [
+                'logo_aplikasi' => '',
+                'favicon' => '',
+                'logo_departemen' => '',
+                'primary_color' => '#4f46e5',
+                'secondary_color' => '#7c3aed',
+            ],
             default => [],
         };
     }
@@ -86,6 +93,16 @@ class PengaturanController extends Controller
             $path = $request->file('favicon')->store('pengaturan', 'public');
             Pengaturan::updateOrCreate(
                 ['grup' => 'branding', 'key' => 'favicon'],
+                ['tipe' => 'file', 'value' => $path]
+            );
+        }
+
+        if ($request->hasFile('logo_departemen')) {
+            $old = Pengaturan::where(['grup' => 'branding', 'key' => 'logo_departemen'])->value('value');
+            if ($old) Storage::disk('public')->delete($old);
+            $path = $request->file('logo_departemen')->store('pengaturan', 'public');
+            Pengaturan::updateOrCreate(
+                ['grup' => 'branding', 'key' => 'logo_departemen'],
                 ['tipe' => 'file', 'value' => $path]
             );
         }
