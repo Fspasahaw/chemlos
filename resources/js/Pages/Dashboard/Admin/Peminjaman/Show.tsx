@@ -1,8 +1,10 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle, ClipboardList, Download, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ClipboardList, Download, FileText, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
+import { ConfirmModal } from '@/Components/ConfirmModal';
+import { DocumentPreview } from '@/Components/DocumentPreview';
 import { EmptyState } from '@/Components/EmptyState';
 import { Tabs } from '@/Components/Tabs';
 import { Timeline } from '@/Components/Timeline';
@@ -21,6 +23,10 @@ export default function Show() {
     const canApprove = ['diajukan', 'menunggu_dosen', 'menunggu_laboran'].includes(item.status);
     const canReject = ['diajukan', 'menunggu_dosen', 'menunggu_laboran'].includes(item.status);
 
+    const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null);
+    const [alasan, setAlasan] = useState('');
+    const [showJsa, setShowJsa] = useState(false);
+
     const timelineItems = useMemo(() => (item.status_logs ?? []).map((s: any) => ({
         id: s.id,
         icon: s.status_ke === 'ditolak' || s.status_ke === 'dibatalkan' ? 'warning' : 'check',
@@ -29,6 +35,17 @@ export default function Show() {
         date: `${s.user?.nama_lengkap ?? 'Sistem'} • ${formatDateTime(s.created_at)}`,
     })), [item.status_logs]);
 
+    const handleApprove = () => {
+        setConfirmAction(null);
+        router.post(`${base}/${item.id}/approve`, {}, { preserveScroll: true });
+    };
+
+    const handleReject = () => {
+        if (!alasan) return;
+        setConfirmAction(null);
+        router.post(`${base}/${item.id}/reject`, { alasan_penolakan: alasan }, { preserveScroll: true });
+    };
+
     const dendaInfo = item.total_denda > 0 && (
         <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/30 dark:bg-rose-900/20">
             <h3 className="font-semibold text-rose-700 dark:text-rose-300">Rincian Denda</h3>
@@ -36,6 +53,8 @@ export default function Show() {
             <p className="text-sm text-rose-600 dark:text-rose-300">Dibayar: {formatRupiah(item.denda_dibayar)}</p>
         </div>
     );
+
+    const isApprove = confirmAction === 'approve';
 
     return (
         <>
@@ -49,8 +68,8 @@ export default function Show() {
                         <ClipboardList className="h-7 w-7 text-indigo-600" /> Peminjaman {item.kode}
                     </h1>
                     <div className="flex flex-wrap gap-2">
-                        {canApprove && <Button size="sm" leftIcon={<CheckCircle className="h-4 w-4" />} onClick={() => router.post(`${base}/${item.id}/approve`, {}, { preserveScroll: true })}>Setujui</Button>}
-                        {canReject && <Button size="sm" variant="danger" leftIcon={<XCircle className="h-4 w-4" />} onClick={() => router.post(`${base}/${item.id}/reject`, { alasan_penolakan: 'Ditolak dari halaman detail' }, { preserveScroll: true })}>Tolak</Button>}
+                        {canApprove && <Button size="sm" leftIcon={<CheckCircle className="h-4 w-4" />} onClick={() => { setAlasan(''); setConfirmAction('approve'); }}>Setujui</Button>}
+                        {canReject && <Button size="sm" variant="danger" leftIcon={<XCircle className="h-4 w-4" />} onClick={() => { setAlasan(''); setConfirmAction('reject'); }}>Tolak</Button>}
                     </div>
                 </div>
             </div>
@@ -62,16 +81,20 @@ export default function Show() {
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Dibuat {formatDateTime(item.created_at)}</p>
                     </div>
                     {item.file_jsa && (
-                        <a href={`/storage/${item.file_jsa}`} target="_blank" rel="noreferrer">
-                            <Button size="sm" variant="neutral" leftIcon={<Download className="h-4 w-4" />}>Unduh JSA</Button>
-                        </a>
+                        <button
+                            type="button"
+                            onClick={() => setShowJsa(true)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                        >
+                            <Download className="h-4 w-4" /> Unduh JSA
+                        </button>
                     )}
                 </div>
 
                 <Tabs tabs={[
                     { key: 'detail', label: 'Detail' },
                     { key: 'alat', label: 'Daftar Alat' },
-                    { key: 'timeline', label: 'Timeline Status' },
+                    { key: 'timeline', label: 'Lini Masa Status' },
                 ]} active={tab} onChange={setTab} />
 
                 <div className="mt-6">
@@ -102,12 +125,42 @@ export default function Show() {
                     )}
 
                     {tab === 'timeline' && (
-                        timelineItems.length ? <Timeline items={timelineItems} /> : <EmptyState title="Belum ada log status" description="Belum ada perubahan status untuk peminjaman ini." />
+                        timelineItems.length ? <Timeline items={timelineItems} size="lg" /> : <EmptyState title="Belum ada log status" description="Belum ada perubahan status untuk peminjaman ini." />
                     )}
 
                     {dendaInfo}
                 </div>
             </div>
+
+            {item.file_jsa && (
+                <DocumentPreview
+                    file={item.file_jsa}
+                    title="File JSA"
+                    open={showJsa}
+                    onClose={() => setShowJsa(false)}
+                />
+            )}
+
+            <ConfirmModal
+                open={!!confirmAction}
+                onClose={() => setConfirmAction(null)}
+                onConfirm={isApprove ? handleApprove : handleReject}
+                title={isApprove ? 'Setujui Peminjaman' : 'Tolak Peminjaman'}
+                description={isApprove ? `Yakin ingin menyetujui peminjaman ${item.kode}?` : `Berikan alasan penolakan untuk peminjaman ${item.kode}.`}
+                confirmLabel={isApprove ? 'Setuju' : 'Tolak'}
+                variant={isApprove ? 'info' : 'danger'}
+                confirmDisabled={!isApprove && !alasan.trim()}
+            >
+                {!isApprove && (
+                    <textarea
+                        value={alasan}
+                        onChange={(e) => setAlasan(e.target.value)}
+                        placeholder="Alasan penolakan"
+                        rows={3}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                    />
+                )}
+            </ConfirmModal>
         </>
     );
 }

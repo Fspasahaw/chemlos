@@ -87,7 +87,13 @@ export default function AlatEdit({ base }: AlatEditProps) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        transform((formData) => ({ ...formData, _method: 'PUT', remove_foto_utama: data.remove_foto_utama ? '1' : '0' }));
+        transform((formData) => {
+            const payload: any = { ...formData, _method: 'PUT', remove_foto_utama: data.remove_foto_utama ? '1' : '0' };
+            if (!(payload.foto_utama instanceof File)) {
+                delete payload.foto_utama;
+            }
+            return payload;
+        });
         postMain(`${base}/${item.id}`, { forceFormData: true });
     };
 
@@ -141,8 +147,6 @@ export default function AlatEdit({ base }: AlatEditProps) {
         { key: 'dokumen', label: 'Dokumen' },
         { key: 'video', label: 'Video', feature: 'video_tutorial' },
         { key: 'qr', label: 'QR Code', feature: 'qr_code' },
-        { key: 'riwayat', label: 'Riwayat' },
-        { key: 'jadwal', label: 'Jadwal' },
     ].filter((t) => (t.feature ? isEnabled(t.feature) : true));
     return (
         <>

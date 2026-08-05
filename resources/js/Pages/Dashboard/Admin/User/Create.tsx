@@ -1,13 +1,12 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Eye, EyeOff, Save } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/Components/Button';
 import { Input } from '@/Components/Input';
 import { Select } from '@/Components/Select';
 import { SelectSearchMulti } from '@/Components/SelectSearchMulti';
 
 interface ProgramStudi { id: number; nama: string; jenjang: string; }
-interface Lab { id: number; nama: string; }
 
 const jabatanOptions = [
     { value: '', label: '- Pilih -' },
@@ -25,7 +24,7 @@ const statusOptions = [
 ];
 
 export default function Create() {
-    const { roles, programStudi, labs } = usePage().props as any;
+    const { roles, programStudi } = usePage().props as any;
     const { data, setData, post, processing, errors } = useForm({
         nama_lengkap: '',
         email: '',
@@ -33,14 +32,19 @@ export default function Create() {
         password: '',
         roles: [] as string[],
         program_studi_id: '',
-        laboratorium_id: '',
         jabatan_pimpinan: '',
         status: 'approved',
     });
     const [showPassword, setShowPassword] = useState(false);
 
-    const needsLab = data.roles.some((r) => ['laboran', 'kepala_lab'].includes(r));
     const needsJabatan = data.roles.includes('pimpinan');
+    const needsProgramStudi = data.roles.includes('mahasiswa') || (data.roles.includes('pimpinan') && data.jabatan_pimpinan === 'ketua_program_studi');
+
+    useEffect(() => {
+        if (! needsProgramStudi) {
+            setData('program_studi_id', '');
+        }
+    }, [needsProgramStudi]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,7 +52,6 @@ export default function Create() {
     };
 
     const programOptions = [{ value: '', label: '- Pilih -' }, ...programStudi.map((p: ProgramStudi) => ({ value: String(p.id), label: `${p.nama} (${p.jenjang})` }))];
-    const labOptions = [{ value: '', label: '- Pilih -' }, ...labs.map((l: Lab) => ({ value: String(l.id), label: l.nama }))];
 
     return (
         <>
@@ -86,9 +89,8 @@ export default function Create() {
                     error={errors.roles}
                 />
                 <div className="grid gap-4 md:grid-cols-2">
-                    <Select label="Program Studi" options={programOptions} value={data.program_studi_id} onChange={(e) => setData('program_studi_id', e.target.value)} error={errors.program_studi_id} />
-                    {needsLab && <Select label="Laboratorium" options={labOptions} value={data.laboratorium_id} onChange={(e) => setData('laboratorium_id', e.target.value)} error={errors.laboratorium_id} />}
                     {needsJabatan && <Select label="Jabatan Pimpinan" options={jabatanOptions} value={data.jabatan_pimpinan} onChange={(e) => setData('jabatan_pimpinan', e.target.value)} error={errors.jabatan_pimpinan} />}
+                    {needsProgramStudi && <Select label="Program Studi *" options={programOptions} value={data.program_studi_id} onChange={(e) => setData('program_studi_id', e.target.value)} error={errors.program_studi_id} />}
                     <Select label="Status" options={statusOptions} value={data.status} onChange={(e) => setData('status', e.target.value)} error={errors.status} />
                 </div>
                 <div className="flex justify-end">

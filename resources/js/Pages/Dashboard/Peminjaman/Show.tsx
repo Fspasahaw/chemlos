@@ -5,6 +5,7 @@ import { Badge } from '../../../Components/Badge';
 import { Button } from '../../../Components/Button';
 import { Card } from '../../../Components/Card';
 import { ConfirmModal } from '../../../Components/ConfirmModal';
+import { DocumentPreview } from '../../../Components/DocumentPreview';
 import { ImageWithFallback } from '../../../Components/ImageWithFallback';
 import { Stepper } from '../../../Components/Stepper';
 import { Timeline } from '../../../Components/Timeline';
@@ -114,7 +115,8 @@ export default function Show() {
     const { peminjaman, role } = usePage().props as any;
     const p: Peminjaman = peminjaman;
     const [alasan, setAlasan] = useState('');
-    const [rejecting, setRejecting] = useState(false);
+    const [showJsa, setShowJsa] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null);
 
     const status = statusMap[p.status] ?? { label: p.status, variant: 'neutral' };
     const [showCancel, setShowCancel] = useState(false);
@@ -147,11 +149,13 @@ export default function Show() {
     const basePath = roleBasePath[role] ?? '/dashboard';
 
     const handleApprove = () => {
+        setConfirmAction(null);
         router.post(`${basePath}/${p.id}/approve`, {}, { preserveScroll: true });
     };
 
     const handleReject = () => {
         if (!alasan) return;
+        setConfirmAction(null);
         router.post(`${basePath}/${p.id}/reject`, { alasan_penolakan: alasan }, { preserveScroll: true });
     };
 
@@ -159,6 +163,8 @@ export default function Show() {
         setShowCancel(false);
         router.post(`/dashboard/mahasiswa/peminjaman/${p.id}/cancel`, {}, { preserveScroll: true });
     };
+
+    const isApprove = confirmAction === 'approve';
 
     return (
         <>
@@ -236,9 +242,19 @@ export default function Show() {
                         {p.file_jsa && (
                             <div className="mt-4">
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">File JSA</p>
-                                <a href={`/storage/${p.file_jsa}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowJsa(true)}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                                >
                                     <FileText className="h-4 w-4" /> Lihat / Unduh JSA
-                                </a>
+                                </button>
+                                <DocumentPreview
+                                    file={p.file_jsa}
+                                    title="File JSA"
+                                    open={showJsa}
+                                    onClose={() => setShowJsa(false)}
+                                />
                             </div>
                         )}
                     </Card>
@@ -328,19 +344,10 @@ export default function Show() {
                 <div className="space-y-6">
                     <Card>
                         <Card.Header title="Aksi" />
-                        {(canApproveDosen || canApproveLaboran) && !rejecting && (
+                        {(canApproveDosen || canApproveLaboran) && (
                             <div className="flex flex-col gap-2">
-                                <Button variant="primary" leftIcon={<CheckCircle className="h-4 w-4" />} onClick={handleApprove}>Setuju</Button>
-                                <Button variant="outline" leftIcon={<XCircle className="h-4 w-4" />} onClick={() => setRejecting(true)}>Tolak</Button>
-                            </div>
-                        )}
-                        {(canApproveDosen || canApproveLaboran) && rejecting && (
-                            <div className="space-y-2">
-                                <textarea value={alasan} onChange={(e) => setAlasan(e.target.value)} placeholder="Alasan penolakan" rows={3} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800" />
-                                <div className="flex gap-2">
-                                    <Button variant="danger" className="flex-1" onClick={handleReject} disabled={!alasan}>Kirim Penolakan</Button>
-                                    <Button variant="ghost" onClick={() => setRejecting(false)}>Batal</Button>
-                                </div>
+                                <Button variant="primary" leftIcon={<CheckCircle className="h-4 w-4" />} onClick={() => { setAlasan(''); setConfirmAction('approve'); }}>Setuju</Button>
+                                <Button variant="outline" leftIcon={<XCircle className="h-4 w-4" />} onClick={() => { setAlasan(''); setConfirmAction('reject'); }}>Tolak</Button>
                             </div>
                         )}
                         {canCancel && (
@@ -352,11 +359,12 @@ export default function Show() {
                     </Card>
 
                     <Card>
-                        <Card.Header title="Riwayat Status" icon={<Clock className="h-5 w-5" />} />
-                        <Timeline items={timelineItems} />
+                        <Card.Header title="Lini Masa Status" icon={<Clock className="h-5 w-5" />} />
+                        <Timeline items={timelineItems} size="lg" />
                     </Card>
                 </div>
             </div>
+
             <ConfirmModal
                 open={showCancel}
                 onClose={() => setShowCancel(false)}
@@ -366,6 +374,27 @@ export default function Show() {
                 confirmLabel="Ya, Batalkan"
                 variant="danger"
             />
+
+            <ConfirmModal
+                open={!!confirmAction}
+                onClose={() => setConfirmAction(null)}
+                onConfirm={isApprove ? handleApprove : handleReject}
+                title={isApprove ? 'Setujui Peminjaman' : 'Tolak Peminjaman'}
+                description={isApprove ? `Yakin ingin menyetujui peminjaman ${p.kode}?` : `Berikan alasan penolakan untuk peminjaman ${p.kode}.`}
+                confirmLabel={isApprove ? 'Setuju' : 'Tolak'}
+                variant={isApprove ? 'info' : 'danger'}
+                confirmDisabled={!isApprove && !alasan.trim()}
+            >
+                {!isApprove && (
+                    <textarea
+                        value={alasan}
+                        onChange={(e) => setAlasan(e.target.value)}
+                        placeholder="Alasan penolakan"
+                        rows={3}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                    />
+                )}
+            </ConfirmModal>
         </>
     );
 }

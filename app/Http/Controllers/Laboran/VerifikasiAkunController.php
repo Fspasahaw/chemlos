@@ -22,7 +22,11 @@ class VerifikasiAkunController extends Controller
                     ->orWhere('email', 'like', "%{$s}%")
                     ->orWhere('npm_nip', 'like', "%{$s}%");
             }))
-            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
+            ->when(
+                $request->status,
+                fn ($q, $s) => $q->where('status', $s),
+                fn ($q) => $q->whereIn('status', ['pending_email', 'pending_approval'])
+            )
             ->orderByDesc('created_at')
             ->paginate(12)
             ->withQueryString();

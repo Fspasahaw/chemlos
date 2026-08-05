@@ -69,7 +69,7 @@ class LaboratoriumController extends Controller
     {
         $this->authorize('create', Laboratorium::class);
 
-        $data = $request->validate([
+        $rules = [
             'nama' => ['required', 'string', 'max:255'],
             'kode' => ['required', 'string', 'max:50', 'unique:laboratorium,kode'],
             'deskripsi' => ['nullable', 'string'],
@@ -85,12 +85,18 @@ class LaboratoriumController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
             'telepon' => ['nullable', 'string', 'max:30'],
             'status' => ['required', 'in:aktif,nonaktif'],
-            'foto_utama' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'foto_utama' => ['nullable'],
             'pengelola' => ['nullable', 'array'],
             'pengelola.*' => ['exists:users,id'],
             'pengelola_peran' => ['nullable', 'array'],
             'pengelola_peran.*' => ['in:laboran,kepala_lab'],
-        ]);
+        ];
+
+        if ($request->hasFile('foto_utama')) {
+            $rules['foto_utama'] = ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'];
+        }
+
+        $data = $request->validate($rules);
 
         $data['slug'] = Str::slug($data['nama']);
         $data['hari_operasional'] = $data['hari_operasional'] ?? [];
@@ -141,7 +147,7 @@ class LaboratoriumController extends Controller
     {
         $this->authorize('update', $laboratorium);
 
-        $data = $request->validate([
+        $rules = [
             'nama' => ['required', 'string', 'max:255'],
             'kode' => ['required', 'string', 'max:50', 'unique:laboratorium,kode,' . $laboratorium->id],
             'deskripsi' => ['nullable', 'string'],
@@ -157,12 +163,18 @@ class LaboratoriumController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
             'telepon' => ['nullable', 'string', 'max:30'],
             'status' => ['required', 'in:aktif,nonaktif'],
-            'foto_utama' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'foto_utama' => ['nullable'],
             'pengelola' => ['nullable', 'array'],
             'pengelola.*' => ['exists:users,id'],
             'pengelola_peran' => ['nullable', 'array'],
             'pengelola_peran.*' => ['in:laboran,kepala_lab'],
-        ]);
+        ];
+
+        if ($request->hasFile('foto_utama')) {
+            $rules['foto_utama'] = ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'];
+        }
+
+        $data = $request->validate($rules);
 
         $data['slug'] = Str::slug($data['nama']);
         $data['hari_operasional'] = $data['hari_operasional'] ?? [];

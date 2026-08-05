@@ -36,7 +36,7 @@ class PeminjamanController extends Controller
                         ->orWhereHas('details.alat', fn ($q2) => $q2->where('nama', 'like', "%{$s}%"));
                 });
             })
-            ->when($request->status && in_array($request->status, $statuses), fn ($q, $s) => $q->where('status', $s))
+            ->when($request->status, fn ($q, $s) => in_array($s, $statuses) ? $q->where('status', $s) : $q)
             ->orderByDesc('created_at')
             ->paginate(12)
             ->withQueryString();

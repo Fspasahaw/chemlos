@@ -37,6 +37,14 @@ const statusOptions = [
     { value: 'nonaktif', label: 'Nonaktif' },
 ];
 
+function formatLokasi(gedung: string | null | undefined, lantai: string | null | undefined, ruangan: string | null | undefined): string {
+    const parts: string[] = [];
+    if (gedung) parts.push(`Gedung ${gedung}`);
+    if (lantai) parts.push(`Lantai ${lantai}`);
+    if (ruangan) parts.push(`Ruangan ${ruangan}`);
+    return parts.join(', ');
+}
+
 export default function LaboratoriumEdit({ base, canManagePengelola = false }: LaboratoriumEditProps) {
     const { item, pengelola, riwayat, events } = usePage().props as any;
     if (!item) return <SkeletonDetail />;
@@ -45,7 +53,7 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
         ? ((item.laboratorium_pengelolas ?? []) as { user_id: number; peran: string }[]).map((p) => ({ user_id: p.user_id, peran: p.peran || 'laboran' }))
         : [];
 
-    const lokasiAwal = [item.gedung ?? '', item.lantai ?? '', item.ruangan ?? ''].filter(Boolean).join(', ');
+    const lokasiAwal = formatLokasi(item.gedung, item.lantai, item.ruangan) || (item.lokasi ?? '');
     const baseForm = {
         nama: item.nama ?? '', kode: item.kode ?? '', deskripsi: item.deskripsi ?? '',
         lokasi: lokasiAwal || (item.lokasi ?? ''), gedung: item.gedung ?? '', lantai: item.lantai ?? '', ruangan: item.ruangan ?? '',
@@ -65,7 +73,7 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
     const { data, setData, post: postMain, processing, errors, transform } = useForm<any>({ ...baseForm, ...pengelolaForm });
 
     useEffect(() => {
-        const next = [data.gedung, data.lantai, data.ruangan].filter(Boolean).join(', ');
+        const next = formatLokasi(data.gedung, data.lantai, data.ruangan);
         if (next !== data.lokasi) setData('lokasi', next);
     }, [data.gedung, data.lantai, data.ruangan]);
 
@@ -112,7 +120,13 @@ export default function LaboratoriumEdit({ base, canManagePengelola = false }: L
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        transform((formData) => ({ ...formData, _method: 'PUT', remove_foto_utama: data.remove_foto_utama ? '1' : '0' }));
+        transform((formData) => {
+            const payload: any = { ...formData, _method: 'PUT', remove_foto_utama: data.remove_foto_utama ? '1' : '0' };
+            if (!(payload.foto_utama instanceof File)) {
+                delete payload.foto_utama;
+            }
+            return payload;
+        });
         postMain(`${base}/${item.id}`, { forceFormData: true });
     };
 

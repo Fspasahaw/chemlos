@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Laboratorium;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanStatusLog;
 use App\Models\ProgramStudi;
@@ -66,7 +65,6 @@ class UserController extends Controller
         return Inertia::render('Dashboard/Admin/User/Create', [
             'roles' => Role::orderBy('name')->pluck('name'),
             'programStudi' => ProgramStudi::aktif()->get(['id', 'nama', 'jenjang']),
-            'labs' => Laboratorium::aktif()->orderBy('nama')->get(['id', 'nama']),
         ]);
     }
 
@@ -129,7 +127,6 @@ class UserController extends Controller
             'item' => $user->load('roles:id,name'),
             'roles' => Role::orderBy('name')->pluck('name'),
             'programStudi' => ProgramStudi::aktif()->get(['id', 'nama', 'jenjang']),
-            'labs' => Laboratorium::aktif()->orderBy('nama')->get(['id', 'nama']),
         ]);
     }
 
@@ -262,9 +259,10 @@ class UserController extends Controller
     {
         $roles = $request->input('roles', []);
         $isMahasiswa = in_array('mahasiswa', $roles, true);
-        $isLabManager = ! empty(array_intersect(['laboran', 'kepala_lab'], $roles));
+        $isPimpinanKetua = in_array('pimpinan', $roles, true) && $request->input('jabatan_pimpinan') === 'ketua_program_studi';
+        $needsProgramStudi = $isMahasiswa || $isPimpinanKetua;
 
-        return $request->validate([
+        $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -282,11 +280,17 @@ class UserController extends Controller
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$/'],
             'roles' => ['required', 'array'],
             'roles.*' => ['string', 'exists:roles,name'],
-            'program_studi_id' => Rule::when($isMahasiswa, ['required', 'exists:program_studi,id'], ['nullable']),
-            'laboratorium_id' => Rule::when($isLabManager, ['required', 'exists:laboratorium,id'], ['nullable']),
+            'program_studi_id' => Rule::when($needsProgramStudi, ['required', 'exists:program_studi,id'], ['nullable']),
+            'laboratorium_id' => ['nullable', 'exists:laboratorium,id'],
             'jabatan_pimpinan' => ['nullable', 'in:kepala_departemen,sekretaris_departemen,ketua_program_studi,koordinator_k3l'],
             'status' => ['required', 'in:pending_email,pending_approval,approved,suspended,rejected'],
         ]);
+
+        if (! $needsProgramStudi) {
+            $data['program_studi_id'] = null;
+        }
+
+        return $data;
     }
 
     private function statusFields(string $status, ?User $user = null): array

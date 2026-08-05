@@ -6,11 +6,12 @@ import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { Card } from '@/Components/Card';
+import { ConfirmModal } from '@/Components/ConfirmModal';
 import { DataTable, Column } from '@/Components/DataTable';
-import { Input } from '@/Components/Input';
 import { Pagination } from '@/Components/Pagination';
 import { SearchInput } from '@/Components/SearchInput';
 import { Select } from '@/Components/Select';
+import { Textarea } from '@/Components/Textarea';
 import { statusVerifikasiMap as statusMap } from '@/lib/status';
 
 interface UserItem {
@@ -22,14 +23,56 @@ interface UserItem {
     roles?: { name: string }[];
 }
 
+type ConfirmAction = {
+    item: UserItem;
+    type: 'approve' | 'reject';
+};
+
 export default function Index() {
     const { items } = usePage().props as any;
     const loading = usePageLoading();
     const { filters, apply } = useFilter('/dashboard/laboran/verifikasi-akun');
-    const [rejectId, setRejectId] = useState<number | null>(null);
+    const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
     const [reason, setReason] = useState('');
+    const [reasonError, setReasonError] = useState('');
 
     const action = (url: string, body?: Record<string, any>) => router.post(url, body ?? {}, { preserveScroll: true });
+
+    const openApprove = (item: UserItem) => {
+        setReason('');
+        setReasonError('');
+        setConfirm({ item, type: 'approve' });
+    };
+
+    const openReject = (item: UserItem) => {
+        setReason('');
+        setReasonError('');
+        setConfirm({ item, type: 'reject' });
+    };
+
+    const closeModal = () => {
+        setConfirm(null);
+        setReason('');
+        setReasonError('');
+    };
+
+    const handleConfirm = () => {
+        if (! confirm) return;
+
+        if (confirm.type === 'approve') {
+            action(`/dashboard/laboran/verifikasi-akun/${confirm.item.id}/approve`);
+            closeModal();
+            return;
+        }
+
+        if (! reason.trim()) {
+            setReasonError('Alasan penolakan wajib diisi.');
+            return;
+        }
+
+        action(`/dashboard/laboran/verifikasi-akun/${confirm.item.id}/reject`, { rejection_reason: reason });
+        closeModal();
+    };
 
     const columns: Column<UserItem>[] = [
         { header: 'Nama', accessor: 'nama_lengkap' },
@@ -52,43 +95,18 @@ export default function Index() {
                             size="sm"
                             variant="success"
                             leftIcon={<CheckCircle className="h-3 w-3" />}
-                            onClick={() => action(`/dashboard/laboran/verifikasi-akun/${item.id}/approve`)}
+                            onClick={() => openApprove(item)}
                         >
                             Setuju
                         </Button>
-                        {rejectId === item.id ? (
-                            <>
-                                <Input
-                                    value={reason}
-                                    onChange={(e) => setReason(e.target.value)}
-                                    placeholder="Alasan"
-                                    className="w-32"
-                                />
-                                <Button
-                                    size="sm"
-                                    variant="danger"
-                                    leftIcon={<XCircle className="h-3 w-3" />}
-                                    onClick={() => {
-                                        if (reason) {
-                                            action(`/dashboard/laboran/verifikasi-akun/${item.id}/reject`, { rejection_reason: reason });
-                                            setRejectId(null);
-                                            setReason('');
-                                        }
-                                    }}
-                                >
-                                    Tolak
-                                </Button>
-                            </>
-                        ) : (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                leftIcon={<XCircle className="h-3 w-3" />}
-                                onClick={() => setRejectId(item.id)}
-                            >
-                                Tolak
-                            </Button>
-                        )}
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            leftIcon={<XCircle className="h-3 w-3" />}
+                            onClick={() => openReject(item)}
+                        >
+                            Tolak
+                        </Button>
                     </div>
                 ) : null
             ),
@@ -133,6 +151,38 @@ export default function Index() {
                 />
                 <Pagination links={items.links} from={items.from} to={items.to} total={items.total} />
             </Card>
+
+            <ConfirmModal
+                open={!! confirm}
+                onClose={closeModal}
+                onConfirm={handleConfirm}
+                title={confirm?.type === 'approve' ? 'Setujui Akun' : 'Tolak Akun'}
+                description={
+                    confirm
+                        ? (confirm.type === 'approve'
+                            ? `Yakin ingin menyetujui akun ${confirm.item.nama_lengkap}?`
+                            : `Yakin ingin menolak akun ${confirm.item.nama_lengkap}? Berikan alasan penolakan.`)
+                        : 'Apakah Anda yakin?'
+                }
+                confirmLabel={confirm?.type === 'approve' ? 'Setuju' : 'Tolak'}
+                cancelLabel="Batal"
+                variant={confirm?.type === 'approve' ? 'info' : 'danger'}
+            >
+                {confirm?.type === 'reject' && (
+                    <Textarea
+                        label="Alasan Penolakan *"
+                        value={reason}
+                        onChange={(e) => {
+                            setReason(e.target.value);
+                            if (reasonError) setReasonError('');
+                        }}
+                        error={reasonError}
+                        placeholder="Jelaskan alasan penolakan..."
+                        rows={3}
+                        autoResize
+                    />
+                )}
+            </ConfirmModal>
         </>
     );
 }

@@ -29,7 +29,7 @@ class PeminjamanController extends Controller
                             ->orWhereHas('details.alat', fn ($q) => $q->where('nama', 'like', "%{$s}%"));
                     });
                 })
-                ->when($request->status && in_array($request->status, $statuses), fn ($q, $s) => $q->where('status', $s))
+                ->when($request->status, fn ($q, $s) => in_array($s, $statuses) ? $q->where('status', $s) : $q)
                 ->when($request->laboratorium, fn ($q, $l) => $q->where('laboratorium_id', $l))
                 ->when($request->start && $request->end, fn ($q) => $q->whereBetween('tanggal_mulai', [$request->start, $request->end]))
                 ->orderByDesc('created_at')

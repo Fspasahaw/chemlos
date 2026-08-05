@@ -379,7 +379,7 @@ class AlatController extends Controller
     {
         $labIds = $this->labIds();
 
-        return $request->validate([
+        $rules = [
             'nama' => ['required', 'string', 'max:255'],
             'kode' => ['required', 'string', 'max:50', 'unique:alat,kode,' . ($alat?->id ?? 'NULL')],
             'laboratorium_id' => ['required', 'in:' . implode(',', $labIds)],
@@ -390,8 +390,14 @@ class AlatController extends Controller
             'stok_total' => ['required', 'integer', 'min:0'],
             'persyaratan_khusus' => ['nullable', 'string'],
             'pelatihan_wajib' => ['nullable', 'boolean'],
-            'foto_utama' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
+            'foto_utama' => ['nullable'],
+        ];
+
+        if ($request->hasFile('foto_utama')) {
+            $rules['foto_utama'] = ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'];
+        }
+
+        return $request->validate($rules);
     }
 
 }

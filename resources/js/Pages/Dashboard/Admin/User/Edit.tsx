@@ -1,13 +1,12 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Eye, EyeOff, Save } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/Components/Button';
 import { Checkbox } from '@/Components/Checkbox';
 import { Input } from '@/Components/Input';
 import { Select } from '@/Components/Select';
 
 interface ProgramStudi { id: number; nama: string; jenjang: string; }
-interface Lab { id: number; nama: string; }
 
 const jabatanOptions = [
     { value: '', label: '- Pilih -' },
@@ -26,7 +25,7 @@ const statusOptions = [
 ];
 
 export default function Edit() {
-    const { item, roles, programStudi, labs } = usePage().props as any;
+    const { item, roles, programStudi } = usePage().props as any;
     const currentRoles = (item.roles ?? []).map((r: { name: string }) => r.name);
     const { data, setData, put, processing, errors } = useForm({
         nama_lengkap: item.nama_lengkap ?? '',
@@ -35,7 +34,6 @@ export default function Edit() {
         password: '',
         roles: currentRoles,
         program_studi_id: String(item.program_studi_id ?? ''),
-        laboratorium_id: String(item.laboratorium_pengelolas?.[0]?.laboratorium_id ?? ''),
         jabatan_pimpinan: item.jabatan_pimpinan ?? '',
         status: item.status ?? 'approved',
     });
@@ -45,8 +43,14 @@ export default function Edit() {
         setData('roles', data.roles.includes(role) ? data.roles.filter((r: string) => r !== role) : [...data.roles, role]);
     };
 
-    const needsLab = data.roles.some((r: string) => ['laboran', 'kepala_lab'].includes(r));
     const needsJabatan = data.roles.includes('pimpinan');
+    const needsProgramStudi = data.roles.includes('mahasiswa') || (data.roles.includes('pimpinan') && data.jabatan_pimpinan === 'ketua_program_studi');
+
+    useEffect(() => {
+        if (! needsProgramStudi) {
+            setData('program_studi_id', '');
+        }
+    }, [needsProgramStudi]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,7 +58,6 @@ export default function Edit() {
     };
 
     const programOptions = [{ value: '', label: '- Pilih -' }, ...programStudi.map((p: ProgramStudi) => ({ value: String(p.id), label: `${p.nama} (${p.jenjang})` }))];
-    const labOptions = [{ value: '', label: '- Pilih -' }, ...labs.map((l: Lab) => ({ value: String(l.id), label: l.nama }))];
 
     return (
         <>
@@ -105,9 +108,8 @@ export default function Edit() {
                     {errors.roles && <p className="mt-1 text-xs text-rose-500">{errors.roles}</p>}
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
-                    <Select label="Program Studi" options={programOptions} value={data.program_studi_id} onChange={(e) => setData('program_studi_id', e.target.value)} error={errors.program_studi_id} />
-                    {needsLab && <Select label="Laboratorium" options={labOptions} value={data.laboratorium_id} onChange={(e) => setData('laboratorium_id', e.target.value)} error={errors.laboratorium_id} />}
                     {needsJabatan && <Select label="Jabatan Pimpinan" options={jabatanOptions} value={data.jabatan_pimpinan} onChange={(e) => setData('jabatan_pimpinan', e.target.value)} error={errors.jabatan_pimpinan} />}
+                    {needsProgramStudi && <Select label="Program Studi *" options={programOptions} value={data.program_studi_id} onChange={(e) => setData('program_studi_id', e.target.value)} error={errors.program_studi_id} />}
                     <Select label="Status" options={statusOptions} value={data.status} onChange={(e) => setData('status', e.target.value)} error={errors.status} />
                 </div>
                 <div className="flex justify-end">

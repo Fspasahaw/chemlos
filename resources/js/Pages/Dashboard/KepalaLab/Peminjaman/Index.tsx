@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { useFilter } from '@/Hooks/useFilter';
 import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
-import { Button } from '@/Components/Button';
+import { ConfirmModal } from '@/Components/ConfirmModal';
 import { DataTable } from '@/Components/DataTable';
 import { FilterChips } from '@/Components/FilterChips';
-import { Input } from '@/Components/Input';
 import { Pagination } from '@/Components/Pagination';
 import { SearchInput } from '@/Components/SearchInput';
+import { Textarea } from '@/Components/Textarea';
 import { Tooltip } from '@/Components/Tooltip';
 import { formatDate } from '@/lib/date';
 import { statusPeminjamanMap as statusMap } from '@/lib/status';
@@ -34,15 +34,37 @@ const statusOptions = [
 export default function Index() {
     const { items } = usePage().props as any;
     const loading = usePageLoading();
-    const [rejectId, setRejectId] = useState<number | null>(null);
-    const [alasan, setAlasan] = useState('');
-    const { filters, apply } = useFilter('/dashboard/kepala-lab/peminjaman');
+    const base = '/dashboard/kepala-lab/peminjaman';
+    const { filters, apply } = useFilter(base);
 
-    const approve = (p: Peminjaman) => router.post(`/dashboard/kepala-lab/peminjaman/${p.id}/approve`, {}, { preserveScroll: true });
+    const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null);
+    const [selected, setSelected] = useState<Peminjaman | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
 
-    const submitReject = (p: Peminjaman) => {
-        if (!alasan) return;
-        router.post(`/dashboard/kepala-lab/peminjaman/${p.id}/reject`, { alasan_penolakan: alasan }, { preserveScroll: true });
+    const handleConfirm = () => {
+        if (!selected) return;
+
+        if (confirmAction === 'approve') {
+            router.post(`${base}/${selected.id}/approve`, {}, { preserveScroll: true });
+        } else if (confirmAction === 'reject') {
+            if (!rejectReason.trim()) return;
+            router.post(`${base}/${selected.id}/reject`, { alasan_penolakan: rejectReason }, { preserveScroll: true });
+        }
+
+        setConfirmAction(null);
+        setSelected(null);
+        setRejectReason('');
+    };
+
+    const openApprove = (p: Peminjaman) => {
+        setSelected(p);
+        setConfirmAction('approve');
+    };
+
+    const openReject = (p: Peminjaman) => {
+        setSelected(p);
+        setConfirmAction('reject');
+        setRejectReason('');
     };
 
     const columns = [
@@ -68,31 +90,25 @@ export default function Index() {
                         </Link>
                     </Tooltip>
                     {row.status === 'menunggu_laboran' && (
-                        rejectId === row.id ? (
-                            <div className="flex items-center gap-2">
-                                <Input value={alasan} onChange={(e) => setAlasan(e.target.value)} placeholder="Alasan" className="w-40" />
-                                <Button size="sm" variant="danger" onClick={() => submitReject(row)} disabled={!alasan}>Tolak</Button>
-                                <button onClick={() => { setRejectId(null); setAlasan(''); }} className="text-xs text-slate-500 hover:underline">Batal</button>
-                            </div>
-                        ) : (
-                            <>
-                                <Tooltip content="Setujui">
-                                    <button onClick={() => approve(row)} className="rounded-lg p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
-                                        <CheckCircle className="h-4 w-4" />
-                                    </button>
-                                </Tooltip>
-                                <Tooltip content="Tolak">
-                                    <button onClick={() => setRejectId(row.id)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20">
-                                        <XCircle className="h-4 w-4" />
-                                    </button>
-                                </Tooltip>
-                            </>
-                        )
+                        <>
+                            <Tooltip content="Setujui">
+                                <button onClick={() => openApprove(row)} className="rounded-lg p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                                    <CheckCircle className="h-4 w-4" />
+                                </button>
+                            </Tooltip>
+                            <Tooltip content="Tolak">
+                                <button onClick={() => openReject(row)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20">
+                                    <XCircle className="h-4 w-4" />
+                                </button>
+                            </Tooltip>
+                        </>
                     )}
                 </div>
             ),
         },
     ];
+
+    const isApprove = confirmAction === 'approve';
 
     return (
         <>
@@ -119,6 +135,26 @@ export default function Index() {
             />
 
             <Pagination links={items.links} from={items.from} to={items.to} total={items.total} />
+
+            <ConfirmModal
+                open={!!confirmAction}
+                onClose={() => { setConfirmAction(null); setSelected(null); setRejectReason(''); }}
+                onConfirm={handleConfirm}
+                title={isApprove ? 'Setujui Peminjaman' : 'Tolak Peminjaman'}
+                description={isApprove ? `Yakin ingin menyetujui peminjaman ${selected?.kode ?? ''}?` : `Berikan alasan penolakan untuk peminjaman ${selected?.kode ?? ''}.`}
+                confirmLabel={isApprove ? 'Setuju' : 'Tolak'}
+                variant={isApprove ? 'info' : 'danger'}
+                confirmDisabled={!isApprove && !rejectReason.trim()}
+            >
+                {!isApprove && (
+                    <Textarea
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        placeholder="Alasan penolakan"
+                        rows={3}
+                    />
+                )}
+            </ConfirmModal>
         </>
     );
 }

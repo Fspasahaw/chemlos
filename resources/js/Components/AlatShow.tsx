@@ -144,26 +144,17 @@ export default function AlatShow({ base, editHref }: AlatShowProps) {
     };
 
     const historyIcon = (type: string) => {
-        switch (type) {
-            case 'peminjaman':
-                return (
-                    <span className="rounded-full bg-indigo-100 p-2 text-indigo-600 dark:bg-indigo-900/20">
-                        <CalendarIcon className="h-4 w-4" />
-                    </span>
-                );
-            case 'kerusakan':
-                return (
-                    <span className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-900/20">
-                        <Wrench className="h-4 w-4" />
-                    </span>
-                );
-            default:
-                return (
-                    <span className="rounded-full bg-amber-100 p-2 text-amber-600 dark:bg-amber-900/20">
-                        <Wrench className="h-4 w-4" />
-                    </span>
-                );
-        }
+        const config: Record<string, { icon: typeof CalendarIcon | typeof Wrench; color: string }> = {
+            peminjaman: { icon: CalendarIcon, color: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300' },
+            kerusakan: { icon: Wrench, color: 'bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-300' },
+            maintenance: { icon: Wrench, color: 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-300' },
+        };
+        const { icon: Icon, color } = config[type] ?? config.maintenance;
+        return (
+            <span className={`flex h-10 w-10 items-center justify-center rounded-full ${color}`}>
+                <Icon className="h-5 w-5" />
+            </span>
+        );
     };
 
     return (
@@ -378,25 +369,25 @@ export default function AlatShow({ base, editHref }: AlatShowProps) {
                             )}
 
                             {activeTab === 'riwayat' && (
-                                <div>
+                                <div className="rounded-2xl border border-slate-200/80 bg-white p-6 dark:border-slate-800/80 dark:bg-slate-900">
                                     <h3 className="mb-6 font-semibold text-slate-900 dark:text-slate-100">
                                         Riwayat Peminjaman, Kerusakan, dan Maintenance
                                     </h3>
                                     {(riwayat ?? []).length === 0 ? (
                                         <p className="text-slate-500 dark:text-slate-400">Belum ada riwayat.</p>
                                     ) : (
-                                        <div className="relative space-y-6 border-l-2 border-slate-200 pl-6 dark:border-slate-700">
+                                        <div className="relative pl-12">
+                                            <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
                                             {(riwayat ?? []).map((h, idx) => {
                                                 const statusLabel =
                                                     h.type === 'peminjaman' ? statusPeminjamanMap[h.status]?.label ?? h.status :
                                                     h.type === 'kerusakan' ? statusKerusakanMap[h.status]?.label ?? h.status :
                                                     h.type === 'maintenance' ? statusMaintenanceMap[h.status]?.label ?? h.status :
                                                     h.status;
-                                                const title = h.type === 'kerusakan' ? 'Laporan Kerusakan' : h.type === 'maintenance' ? 'Perbaikan Alat' : h.title;
                                                 return (
-                                                    <div key={idx} className="relative">
-                                                        <span className="absolute -left-7.75 top-0">{historyIcon(h.type)}</span>
-                                                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</p>
+                                                    <div key={idx} className="relative mb-8 last:mb-0">
+                                                        <span className="absolute -left-12 top-0">{historyIcon(h.type)}</span>
+                                                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{h.title}</p>
                                                         <p className="text-xs text-slate-500 dark:text-slate-400">
                                                             {formatDate(h.date)}
                                                             {h.end ? ` - ${formatDate(h.end)}` : ''} &bull; {statusLabel}

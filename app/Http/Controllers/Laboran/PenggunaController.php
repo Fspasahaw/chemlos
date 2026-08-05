@@ -147,7 +147,7 @@ class PenggunaController extends Controller
         $role = $request->input('role');
         $isMahasiswa = $role === 'mahasiswa';
 
-        return $request->validate([
+        $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -166,5 +166,11 @@ class PenggunaController extends Controller
             'program_studi_id' => [Rule::when($isMahasiswa, ['required', 'exists:program_studi,id'], ['nullable'])],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$/'],
         ]);
+
+        if (! $isMahasiswa) {
+            $data['program_studi_id'] = null;
+        }
+
+        return $data;
     }
 }

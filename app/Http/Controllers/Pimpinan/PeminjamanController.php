@@ -13,8 +13,10 @@ class PeminjamanController extends Controller
     {
         $this->authorize('viewAny', Peminjaman::class);
 
+        $statuses = ['diajukan', 'menunggu_dosen', 'menunggu_laboran', 'disetujui', 'berlangsung', 'selesai', 'ditolak', 'dibatalkan', 'terlambat'];
+
         $items = Peminjaman::with('user:id,nama_lengkap,npm_nip', 'laboratorium:id,nama', 'details.alat:id,nama,kode')
-            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
+            ->when($request->status, fn ($q, $s) => in_array($s, $statuses) ? $q->where('status', $s) : $q)
             ->when($request->search, fn ($q, $s) => $q->where('kode', 'like', "%{$s}%"))
             ->orderByDesc('created_at')
             ->paginate(12)

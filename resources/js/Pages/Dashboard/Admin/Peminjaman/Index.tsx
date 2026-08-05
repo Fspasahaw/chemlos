@@ -6,6 +6,7 @@ import { usePageLoading } from '@/Hooks/usePageLoading';
 import { Badge } from '@/Components/Badge';
 import { Button } from '@/Components/Button';
 import { ConfirmDeleteButton } from '@/Components/ConfirmDeleteButton';
+import { ConfirmModal } from '@/Components/ConfirmModal';
 import { DataTable } from '@/Components/DataTable';
 import { DatePicker } from '@/Components/DatePicker';
 import { FilterChips } from '@/Components/FilterChips';
@@ -39,15 +40,43 @@ const statusOptions = [
 export default function Index() {
     const { items, labs } = usePage().props as any;
     const loading = usePageLoading();
-    const [rejectId, setRejectId] = useState<number | null>(null);
-    const [alasan, setAlasan] = useState('');
     const base = '/dashboard/admin/peminjaman';
     const { filters, apply } = useFilter(base);
+
+    const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null);
+    const [selected, setSelected] = useState<Peminjaman | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
 
     const labOptions = [
         { value: '', label: 'Semua Lab' },
         ...Object.entries((labs ?? {}) as Record<string, string>).map(([id, nama]) => ({ value: id, label: nama })),
     ];
+
+    const handleConfirm = () => {
+        if (!selected) return;
+
+        if (confirmAction === 'approve') {
+            router.post(`${base}/${selected.id}/approve`, {}, { preserveScroll: true });
+        } else if (confirmAction === 'reject') {
+            if (!rejectReason.trim()) return;
+            router.post(`${base}/${selected.id}/reject`, { alasan_penolakan: rejectReason }, { preserveScroll: true });
+        }
+
+        setConfirmAction(null);
+        setSelected(null);
+        setRejectReason('');
+    };
+
+    const openApprove = (p: Peminjaman) => {
+        setSelected(p);
+        setConfirmAction('approve');
+    };
+
+    const openReject = (p: Peminjaman) => {
+        setSelected(p);
+        setConfirmAction('reject');
+        setRejectReason('');
+    };
 
     const columns = [
         { header: 'Kode', accessor: 'kode' as keyof Peminjaman },
@@ -74,17 +103,10 @@ export default function Index() {
                         <Button size="sm" variant="neutral" leftIcon={<Eye className="h-4 w-4" />}>Detail</Button>
                     </Link>
                     {['diajukan', 'menunggu_dosen', 'menunggu_laboran'].includes(p.status) && (
-                        <Button size="sm" leftIcon={<CheckCircle className="h-4 w-4" />} onClick={() => router.post(`${base}/${p.id}/approve`, {}, { preserveScroll: true })}>Setuju</Button>
-                    )}
-                    {rejectId === p.id ? (
-                        <div className="flex items-center gap-2">
-                            <Textarea value={alasan} onChange={(e) => setAlasan(e.target.value)} placeholder="Alasan" className="h-10 w-40 resize-none" />
-                            <Button size="sm" variant="danger" onClick={() => { if (alasan) router.post(`${base}/${p.id}/reject`, { alasan_penolakan: alasan }, { preserveScroll: true }); }}>Tolak</Button>
-                        </div>
-                    ) : (
-                        ['diajukan', 'menunggu_dosen', 'menunggu_laboran'].includes(p.status) && (
-                            <Button size="sm" variant="danger" leftIcon={<XCircle className="h-4 w-4" />} onClick={() => setRejectId(p.id)}>Tolak</Button>
-                        )
+                        <>
+                            <Button size="sm" leftIcon={<CheckCircle className="h-4 w-4" />} onClick={() => openApprove(p)}>Setuju</Button>
+                            <Button size="sm" variant="danger" leftIcon={<XCircle className="h-4 w-4" />} onClick={() => openReject(p)}>Tolak</Button>
+                        </>
                     )}
                     <ConfirmDeleteButton
                         onDelete={() => router.delete(`${base}/${p.id}`)}
@@ -95,6 +117,8 @@ export default function Index() {
             className: 'text-right w-96',
         },
     ];
+
+    const isApprove = confirmAction === 'approve';
 
     return (
         <>
@@ -112,6 +136,26 @@ export default function Index() {
             </div>
             <DataTable isLoading={loading} columns={columns} data={items.data as Peminjaman[]} keyExtractor={(p) => p.id} emptyText="Tidak ada data peminjaman." />
             <Pagination links={items.links} from={items.from} to={items.to} total={items.total} />
+
+            <ConfirmModal
+                open={!!confirmAction}
+                onClose={() => { setConfirmAction(null); setSelected(null); setRejectReason(''); }}
+                onConfirm={handleConfirm}
+                title={isApprove ? 'Setujui Peminjaman' : 'Tolak Peminjaman'}
+                description={isApprove ? `Yakin ingin menyetujui peminjaman ${selected?.kode ?? ''}?` : `Berikan alasan penolakan untuk peminjaman ${selected?.kode ?? ''}.`}
+                confirmLabel={isApprove ? 'Setuju' : 'Tolak'}
+                variant={isApprove ? 'info' : 'danger'}
+                confirmDisabled={!isApprove && !rejectReason.trim()}
+            >
+                {!isApprove && (
+                    <Textarea
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        placeholder="Alasan penolakan"
+                        rows={3}
+                    />
+                )}
+            </ConfirmModal>
         </>
     );
 }

@@ -20,12 +20,6 @@ class DemoAssetHelper
     public static function image(string $path, int $width, int $height, string $label = ''): string
     {
         $disk = self::disk();
-        $fullPath = $disk->path($path);
-
-        $dir = dirname($fullPath);
-        if (! is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
 
         $seed = urlencode(substr(preg_replace('/[^a-zA-Z0-9]/', '-', $path), 0, 60));
 
@@ -39,7 +33,7 @@ class DemoAssetHelper
         try {
             $response = Http::timeout(20)->get($url);
             if ($response->successful()) {
-                file_put_contents($fullPath, $response->body());
+                $disk->put($path, $response->body());
 
                 return $path;
             }
@@ -47,10 +41,10 @@ class DemoAssetHelper
             // Lanjutkan ke fallback GD
         }
 
-        return self::placeholderImage($fullPath, $path, $width, $height, $label);
+        return self::placeholderImage($path, $width, $height, $label);
     }
 
-    protected static function placeholderImage(string $fullPath, string $path, int $width, int $height, string $label = ''): string
+    protected static function placeholderImage(string $path, int $width, int $height, string $label = ''): string
     {
         $image = imagecreatetruecolor($width, $height);
 
@@ -88,21 +82,18 @@ class DemoAssetHelper
             imagestring($image, 5, (int) (($width - (strlen($text) * 8)) / 2), (int) ($height / 2), $text, $textColor);
         }
 
-        imagejpeg($image, $fullPath, 85);
+        ob_start();
+        imagejpeg($image, null, 85);
+        $contents = ob_get_clean();
+        imagedestroy($image);
+
+        self::disk()->put($path, $contents);
 
         return $path;
     }
 
     public static function pdf(string $path, string $title): string
     {
-        $disk = self::disk();
-        $fullPath = $disk->path($path);
-
-        $dir = dirname($fullPath);
-        if (! is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
         $date = date('Y-m-d H:i:s');
         $html = <<<HTML
 <!DOCTYPE html>
@@ -132,21 +123,13 @@ HTML;
         $pdf->setPaper('A4', 'portrait');
         $pdf->render();
 
-        file_put_contents($fullPath, $pdf->output());
+        self::disk()->put($path, $pdf->output());
 
         return $path;
     }
 
     public static function qr(string $path, string $data): string
     {
-        $disk = self::disk();
-        $fullPath = $disk->path($path);
-
-        $dir = dirname($fullPath);
-        if (! is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
         $size = 256;
         $image = imagecreatetruecolor($size, $size);
         $white = imagecolorallocate($image, 255, 255, 255);
@@ -194,7 +177,12 @@ HTML;
             imagestring($image, 3, 20, $size - 16, $label, $accent);
         }
 
-        imagepng($image, $fullPath);
+        ob_start();
+        imagepng($image, null);
+        $contents = ob_get_clean();
+        imagedestroy($image);
+
+        self::disk()->put($path, $contents);
 
         return $path;
     }
